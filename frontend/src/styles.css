@@ -59,12 +59,21 @@ main,
 }
 
 .topbar {
-  min-height: 84px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  margin-inline: 0;
+  min-height: 68px;
+  padding-inline: max(20px, calc((100vw - 1440px) / 2));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   border-bottom: 1px solid var(--archive-line);
+  background: rgba(8, 9, 10, .9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .brand-lockup {
@@ -124,6 +133,61 @@ main,
 
 .admin-link:hover {
   color: var(--archive-accent);
+}
+
+.upload-status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--archive-muted);
+  font: 500 11px/1 Orbitron, ui-monospace, monospace;
+  letter-spacing: .14em;
+}
+
+.upload-status-diamond {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  transform: rotate(45deg);
+  background: currentColor;
+}
+
+.upload-status-online {
+  color: var(--archive-green);
+}
+
+.upload-status-online .upload-status-diamond {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--archive-green) 60%, transparent);
+}
+
+.upload-status-offline {
+  color: var(--archive-red);
+}
+
+.upload-status-checking {
+  color: var(--archive-muted);
+}
+
+.upload-status-checking .upload-status-diamond {
+  animation: status-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
+
+.site-shell:not(.admin-shell) .brand-symbol {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  font-size: 15px;
+}
+
+.site-shell:not(.admin-shell) .brand-copy strong {
+  font-size: 12px;
+  letter-spacing: .14em;
 }
 
 main {
@@ -520,14 +584,15 @@ main {
 }
 
 @media (max-width: 680px) {
-  .topbar,
   main,
   .site-footer {
     width: min(100% - 24px, 1440px);
   }
 
   .topbar {
-    min-height: 68px;
+    width: 100%;
+    min-height: 60px;
+    padding-inline: 12px;
     gap: 10px;
   }
 
@@ -536,16 +601,28 @@ main {
   }
 
   .brand-symbol {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    font-size: 14px;
   }
 
   .brand-copy strong {
-    font-size: 11px;
-    letter-spacing: .12em;
+    font-size: 10px;
+    letter-spacing: .1em;
     white-space: nowrap;
+  }
+
+  .upload-status {
+    gap: 7px;
+    font-size: 10px;
+    letter-spacing: .1em;
+  }
+
+  .upload-status-diamond {
+    width: 7px;
+    height: 7px;
+    flex-basis: 7px;
   }
 
   .brand-copy small {
