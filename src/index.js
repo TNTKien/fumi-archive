@@ -47,6 +47,10 @@ export default {
         return listAdminImages(url, env, auth);
       }
 
+      if (url.pathname === "/api/admin/discord/test" && request.method === "POST") {
+        return sendDiscordTest(url, env, auth);
+      }
+
       const match = url.pathname.match(/^\/api\/admin\/images\/([^/]+)\/status$/);
       if (match && request.method === "PATCH") {
         return updateImageStatus(request, url, env, decodeURIComponent(match[1]), auth);
@@ -99,6 +103,25 @@ function normalizeAccessIssuer(value) {
   const raw = String(value || "").trim().replace(/\/$/, "");
   if (raw.startsWith("https://")) return raw;
   return "https://" + raw;
+}
+
+async function sendDiscordTest(url, env, auth) {
+  const sent = await sendDiscordAlert(env, {
+    title: "Discord webhook test",
+    description: "This is a manual test message from the Fumi Archive admin panel.",
+    color: 5793266,
+    fields: [
+      { name: "Site", value: url.origin, inline: false },
+      { name: "Triggered by", value: auth.email, inline: false },
+      { name: "Time", value: new Date().toISOString(), inline: false }
+    ]
+  });
+
+  if (!sent) {
+    return json({ success: false, error: "Discord webhook test failed." }, 502);
+  }
+
+  return json({ success: true });
 }
 
 async function listAdminImages(url, env, auth) {
