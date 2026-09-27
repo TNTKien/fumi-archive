@@ -66,9 +66,9 @@ main,
   margin-inline: 0;
   min-height: 68px;
   padding-inline: max(20px, calc((100vw - 1440px) / 2));
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
   border-bottom: 1px solid var(--archive-line);
   background: rgba(8, 9, 10, .9);
@@ -121,6 +121,7 @@ main,
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
 }
 
@@ -133,6 +134,47 @@ main,
 
 .admin-link:hover {
   color: var(--archive-accent);
+}
+
+.site-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 34px;
+  height: 100%;
+  min-height: 68px;
+}
+
+.site-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 68px;
+  color: #747b7d;
+  font: 700 11px/1 Orbitron, ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+.site-nav-link:hover {
+  color: var(--archive-text);
+}
+
+.site-nav-link.active {
+  color: var(--archive-accent);
+}
+
+.site-nav-link.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 6px;
+  height: 6px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--archive-accent);
+  box-shadow: 0 0 10px rgba(245, 217, 10, .28);
 }
 
 .upload-status {
@@ -831,6 +873,7 @@ main {
     width: 100%;
     min-height: 60px;
     padding-inline: 12px;
+    grid-template-columns: auto 1fr auto;
     gap: 10px;
   }
 
@@ -851,10 +894,27 @@ main {
     white-space: nowrap;
   }
 
+  .site-nav {
+    min-height: 60px;
+    gap: 16px;
+  }
+
+  .site-nav-link {
+    min-height: 60px;
+    font-size: 9px;
+    letter-spacing: .08em;
+  }
+
+  .site-nav-link.active::after {
+    bottom: 6px;
+    width: 5px;
+    height: 5px;
+  }
+
   .upload-status {
     gap: 7px;
-    font-size: 10px;
-    letter-spacing: .1em;
+    font-size: 9px;
+    letter-spacing: .08em;
   }
 
   .upload-status-diamond {
