@@ -243,6 +243,22 @@
     padding-top: 38px;
   }
 
+  .admin-hero h1 {
+    width: 100%;
+    overflow: hidden;
+    font-size: clamp(38px, 12vw, 56px);
+    line-height: .94;
+    letter-spacing: -.04em;
+  }
+
+  .admin-hero h1 > span,
+  .admin-hero h1 > span > span {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+
   .admin-stats {
     grid-template-columns: 1fr;
   }
