@@ -245,7 +245,6 @@ function App() {
           <span className="brand-symbol">ᗜˬᗜ</span>
           <span className="brand-copy">
             <strong>FUMI ARCHIVE</strong>
-            <small>PLUSHIE PRESERVATION NODE</small>
           </span>
         </a>
 
