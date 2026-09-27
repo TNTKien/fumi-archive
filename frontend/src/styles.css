@@ -1111,3 +1111,98 @@ main {
     width: auto !important;
   }
 }
+
+/* Shared header used by Archive and Spots. */
+.site-header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  min-height: 68px;
+  padding-inline: max(20px, calc((100vw - 1440px) / 2));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--archive-line);
+  background: rgba(8, 9, 10, .94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.site-header-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-header-logo {
+  display: inline-flex;
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+.site-header .brand-symbol {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  font-size: 15px;
+}
+
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.site-header-nav a {
+  color: var(--archive-text);
+  font: 700 11px/1 Orbitron, ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+
+.site-header-nav a:hover {
+  color: var(--archive-accent);
+}
+
+.site-header-nav a[aria-current="page"] {
+  color: var(--archive-text);
+}
+
+@media (max-width: 680px) {
+  .site-header {
+    min-height: 60px;
+    padding-inline: 12px;
+    gap: 10px;
+  }
+
+  .site-header-left {
+    gap: 10px;
+  }
+
+  .site-header .brand-symbol {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    font-size: 14px;
+  }
+
+  .site-header-nav {
+    gap: 12px;
+  }
+
+  .site-header-nav a {
+    font-size: 9px;
+    letter-spacing: .045em;
+  }
+
+  .site-header > .upload-status {
+    display: none;
+  }
+}
