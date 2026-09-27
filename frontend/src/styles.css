@@ -1160,7 +1160,7 @@ main {
 
 .site-header-nav a {
   color: var(--archive-text);
-  font: 700 11px/1 Orbitron, ui-monospace, monospace;
+  font: 700 12px/1 Orbitron, ui-monospace, monospace;
   letter-spacing: .08em;
   text-decoration: none;
   white-space: nowrap;
@@ -1209,7 +1209,7 @@ main {
   }
 
   .site-header-nav a {
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: .045em;
   }
 
@@ -1219,5 +1219,29 @@ main {
 
   .site-header > .upload-status {
     display: none;
+  }
+}
+
+
+.site-footer-links {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.site-footer-links a {
+  color: var(--archive-text);
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+.site-footer-links a:hover {
+  color: var(--archive-accent);
+}
+
+@media (max-width: 680px) {
+  .site-footer-links {
+    align-items: flex-start;
+    gap: 10px;
   }
 }
