@@ -1,5 +1,9 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+
+const rootDir = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root: "frontend",
@@ -7,6 +11,12 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: "../dist",
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(rootDir, "frontend/index.html"),
+        admin: resolve(rootDir, "frontend/admin/index.html")
+      }
+    }
   }
 });
