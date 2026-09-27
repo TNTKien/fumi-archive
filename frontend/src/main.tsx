@@ -3,7 +3,9 @@ import { createRoot } from "react-dom/client";
 import {
   Badge,
   Button,
-  GlitchText
+  GlitchText,
+  SonnerToaster,
+  notify
 } from "reend-components";
 import "reend-components/styles.css";
 import "./styles.css";
@@ -51,7 +53,6 @@ function App() {
 
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
-  const [uploadMessage, setUploadMessage] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -143,11 +144,14 @@ function App() {
           "error-callback"() {
             setTurnstileToken("");
             setTurnstileReady(false);
-            setUploadMessage("Verification failed to initialize.");
+            notify.error("Verification failed to initialize.", { duration: 5000 });
           }
         });
       } catch (error) {
-        setUploadMessage(error instanceof Error ? error.message : "Verification is unavailable.");
+        notify.error(
+          error instanceof Error ? error.message : "Verification is unavailable.",
+          { duration: 5000 }
+        );
       }
     }
 
@@ -192,20 +196,19 @@ function App() {
     if (next.type !== "image/jpeg" && next.type !== "image/png") {
       setFile(null);
       setUploadState("error");
-      setUploadMessage("Only JPEG and PNG images are supported.");
+      notify.error("Only JPEG and PNG images are supported.", { duration: 5000 });
       return;
     }
 
     if (next.size <= 0 || next.size > MAX_BYTES) {
       setFile(null);
       setUploadState("error");
-      setUploadMessage("Image must be 2 MB or smaller.");
+      notify.error("Image must be 2 MB or smaller.", { duration: 5000 });
       return;
     }
 
     setFile(next);
     setUploadState("idle");
-    setUploadMessage("");
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -219,7 +222,6 @@ function App() {
     if (!file || !turnstileToken) return;
 
     setUploadState("uploading");
-    setUploadMessage("TRANSMITTING IMAGE TO ARCHIVE…");
 
     try {
       const data = new FormData();
@@ -247,16 +249,20 @@ function App() {
       setUploadAvailability("online");
       setImages((current) => [body.image, ...current]);
       setUploadState("success");
-      setUploadMessage("ARCHIVED // IMAGE IS NOW PUBLIC");
       setFile(null);
+      notify.success("Image archived successfully.", {
+        description: "The image is now visible in the public archive."
+      });
 
       window.setTimeout(() => {
         setUploadState("idle");
-        setUploadMessage("");
       }, 1600);
     } catch (error) {
       setUploadState("error");
-      setUploadMessage(error instanceof Error ? error.message : "Upload failed.");
+      notify.error(
+        error instanceof Error ? error.message : "Upload failed.",
+        { duration: 5000 }
+      );
     } finally {
       setTurnstileToken("");
       setTurnstileReady(false);
@@ -267,7 +273,9 @@ function App() {
   }
 
   return (
-    <div className="site-shell">
+    <>
+      <SonnerToaster position="top-right" />
+      <div className="site-shell">
       <header className="topbar">
         <a href="/" className="brand-lockup" aria-label="Fumi Archive home">
           <span className="brand-symbol">ᗜˬᗜ</span>
@@ -441,9 +449,6 @@ function App() {
                 ARCHIVE IMAGE
               </Button>
 
-              {uploadMessage && uploadState !== "uploading" && (
-                <p className={"terminal-message " + uploadState}>{uploadMessage}</p>
-              )}
             </div>
 
             <span className="upload-panel-corner tl" aria-hidden="true" />
@@ -506,7 +511,8 @@ function App() {
         </div>
         <span>IMAGES SERVED VIA TIKTOK / BYTEDANCE CDN</span>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 
