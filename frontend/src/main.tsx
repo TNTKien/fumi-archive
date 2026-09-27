@@ -395,7 +395,6 @@ function App() {
                     onClick={() => {
                       setFile(null);
                       setUploadState("idle");
-                      setUploadMessage("");
                     }}
                   >
                     ×
