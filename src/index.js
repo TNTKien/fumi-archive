@@ -68,7 +68,10 @@ async function listImages(url, env) {
 }
 
 async function uploadImage(request, url, env) {
-  const origin = request.headers.get("origin");\n  if (origin && origin !== url.origin) {\n    return json({ success: false, error: "Cross-origin uploads are not allowed." }, 403);\n  }
+  const origin = request.headers.get("origin");
+  if (origin && origin !== url.origin) {
+    return json({ success: false, error: "Cross-origin uploads are not allowed." }, 403);
+  }
 
   if (!env.UPLOAD_SESSION || !env.UPLOAD_CSRF) {
     return json({ success: false, error: "Upload session is not configured." }, 503);
@@ -98,7 +101,11 @@ async function uploadImage(request, url, env) {
   }
 
   const verification = await verifyTurnstile(token, ip, env.TURNSTILE_SECRET);
-  if (\n    !verification.success ||\n    verification.action !== "upload" ||\n    verification.hostname !== url.hostname\n  ) {
+  if (
+    !verification.success ||
+    verification.action !== "upload" ||
+    verification.hostname !== url.hostname
+  ) {
     return json({ success: false, error: "Verification failed. Please try again." }, 403);
   }
 
