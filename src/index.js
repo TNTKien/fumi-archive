@@ -9,7 +9,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
 const DAILY_LIMIT = 50;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/config" && request.method === "GET") {
@@ -25,7 +25,7 @@ export default {
     }
 
     if (url.pathname === "/api/images" && request.method === "POST") {
-      return uploadImage(request, url, env);
+      return uploadImage(request, url, env, ctx);
     }
 
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
@@ -192,7 +192,7 @@ async function listImages(url, env) {
   });
 }
 
-async function uploadImage(request, url, env) {
+async function uploadImage(request, url, env, ctx) {
   const origin = request.headers.get("origin");
   if (origin && origin !== url.origin) {
     return json({ success: false, error: "Cross-origin uploads are not allowed." }, 403);
@@ -275,6 +275,22 @@ async function uploadImage(request, url, env) {
   });
 
   const text = await upstream.text();
+
+  if (isTikTokLoginResponse(upstream.status, text)) {
+    ctx.waitUntil(
+      markTikTokSessionExpired(
+        env,
+        "TikTok returned an authentication/login response.",
+        url.origin
+      )
+    );
+
+    return json(
+      { success: false, error: "Upload service authentication expired. Please try again later." },
+      503
+    );
+  }
+
   let payload;
 
   try {
@@ -284,13 +300,26 @@ async function uploadImage(request, url, env) {
   }
 
   if (
-    upstream.status === 401 ||
-    upstream.status === 403 ||
     !payload ||
     payload.code !== 0 ||
     payload.message !== "success" ||
     typeof payload.data?.src !== "string"
   ) {
+    if (looksLikeTikTokAuthError(payload)) {
+      ctx.waitUntil(
+        markTikTokSessionExpired(
+          env,
+          payload?.message || payload?.msg || "TikTok rejected the authenticated session.",
+          url.origin
+        )
+      );
+
+      return json(
+        { success: false, error: "Upload service authentication expired. Please try again later." },
+        503
+      );
+    }
+
     return json(
       { success: false, error: payload?.message || "TikTok rejected the upload." },
       upstream.status >= 400 ? upstream.status : 502
@@ -318,6 +347,8 @@ async function uploadImage(request, url, env) {
     createdAt
   ).run();
 
+  ctx.waitUntil(markTikTokSessionHealthy(env, url.origin));
+
   return json({
     success: true,
     image: {
@@ -331,6 +362,123 @@ async function uploadImage(request, url, env) {
       createdAt
     }
   }, 201);
+}
+
+function isTikTokLoginResponse(status, text) {
+  if (status === 401 || status === 403) return true;
+
+  return (
+    /<!doctype|<html/i.test(text) &&
+    /login|sign in|passport|session|tiktok/i.test(text)
+  );
+}
+
+function looksLikeTikTokAuthError(payload) {
+  const message = String(payload?.message || payload?.msg || "").toLowerCase();
+
+  return (
+    message.includes("login") ||
+    message.includes("session") ||
+    message.includes("csrf") ||
+    message.includes("unauthorized") ||
+    message.includes("authentication")
+  );
+}
+
+async function markTikTokSessionExpired(env, reason, siteOrigin) {
+  const now = new Date().toISOString();
+  const safeReason = String(reason || "Authentication failed").slice(0, 500);
+
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO service_state (key,status,changed_at,alerted_at,last_error) VALUES ('tiktok_session','healthy',?,NULL,NULL)"
+  ).bind(now).run();
+
+  await env.DB.prepare(
+    "UPDATE service_state SET status='expired', changed_at=?, alerted_at=NULL, last_error=? WHERE key='tiktok_session' AND status!='expired'"
+  ).bind(now, safeReason).run();
+
+  await env.DB.prepare(
+    "UPDATE service_state SET last_error=? WHERE key='tiktok_session' AND status='expired'"
+  ).bind(safeReason).run();
+
+  const state = await env.DB.prepare(
+    "SELECT status, alerted_at FROM service_state WHERE key='tiktok_session'"
+  ).first();
+
+  if (state?.status !== "expired" || state?.alerted_at) return;
+
+  const sent = await sendDiscordAlert(env, {
+    title: "TikTok upload session expired",
+    description:
+      "Fumi Archive can no longer authenticate uploads to TikTok. New uploads are temporarily unavailable.",
+    color: 15158332,
+    fields: [
+      { name: "Site", value: siteOrigin, inline: false },
+      { name: "Reason", value: safeReason, inline: false },
+      { name: "Detected", value: now, inline: false }
+    ]
+  });
+
+  if (sent) {
+    await env.DB.prepare(
+      "UPDATE service_state SET alerted_at=? WHERE key='tiktok_session' AND status='expired' AND alerted_at IS NULL"
+    ).bind(now).run();
+  }
+}
+
+async function markTikTokSessionHealthy(env, siteOrigin) {
+  const now = new Date().toISOString();
+
+  const result = await env.DB.prepare(
+    "UPDATE service_state SET status='healthy', changed_at=?, alerted_at=NULL, last_error=NULL WHERE key='tiktok_session' AND status='expired' RETURNING key"
+  ).bind(now).first();
+
+  if (!result) return;
+
+  await sendDiscordAlert(env, {
+    title: "TikTok upload session recovered",
+    description: "Fumi Archive successfully authenticated an upload to TikTok again.",
+    color: 5763719,
+    fields: [
+      { name: "Site", value: siteOrigin, inline: false },
+      { name: "Recovered", value: now, inline: false }
+    ]
+  });
+}
+
+async function sendDiscordAlert(env, embed) {
+  if (!env.DISCORD_WEBHOOK_URL) {
+    console.warn("Discord webhook is not configured; skipping alert.");
+    return false;
+  }
+
+  try {
+    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        username: "Fumi Archive",
+        allowed_mentions: { parse: [] },
+        embeds: [
+          {
+            ...embed,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      }),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok) {
+      console.error("Discord webhook failed", response.status, await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Discord webhook request failed", error);
+    return false;
+  }
 }
 
 async function verifyTurnstile(token, ip, secret) {
