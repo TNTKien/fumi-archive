@@ -1172,7 +1172,18 @@ main {
 }
 
 .site-header-nav a[aria-current="page"] {
-  color: var(--archive-text);
+  position: relative;
+  color: var(--archive-accent);
+}
+
+.site-header-nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -22px;
+  height: 2px;
+  background: var(--archive-accent);
 }
 
 @media (max-width: 680px) {
@@ -1200,6 +1211,10 @@ main {
   .site-header-nav a {
     font-size: 9px;
     letter-spacing: .045em;
+  }
+
+  .site-header-nav a[aria-current="page"]::after {
+    bottom: -20px;
   }
 
   .site-header > .upload-status {
