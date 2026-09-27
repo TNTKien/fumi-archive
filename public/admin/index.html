@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>fumi archive · admin</title>
+  <link rel="stylesheet" href="/admin/styles.css" />
+</head>
+<body>
+  <header class="admin-header">
+    <div>
+      <p class="eyebrow">fumi archive</p>
+      <h1>Admin</h1>
+    </div>
+    <a href="/">View gallery</a>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <div>
+        <strong id="adminIdentity">Authenticated admin</strong>
+        <span id="summary"></span>
+      </div>
+
+      <div class="filters" aria-label="Image filters">
+        <button type="button" data-filter="all" class="active">All</button>
+        <button type="button" data-filter="published">Published</button>
+        <button type="button" data-filter="hidden">Hidden</button>
+      </div>
+    </section>
+
+    <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
+    <section id="adminGallery" class="admin-gallery"></section>
+    <div id="emptyState" class="empty" hidden>No images found.</div>
+  </main>
+
+  <script type="module" src="/admin/app.js"></script>
+</body>
+</html>
