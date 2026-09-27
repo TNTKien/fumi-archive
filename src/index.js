@@ -98,7 +98,7 @@ async function uploadImage(request, url, env) {
   }
 
   const verification = await verifyTurnstile(token, ip, env.TURNSTILE_SECRET);
-  if (!verification.success || verification.action !== "upload") {
+  if (\n    !verification.success ||\n    verification.action !== "upload" ||\n    verification.hostname !== url.hostname\n  ) {
     return json({ success: false, error: "Verification failed. Please try again." }, 403);
   }
 
