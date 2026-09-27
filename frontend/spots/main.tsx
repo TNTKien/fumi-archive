@@ -70,6 +70,7 @@ function SpotsApp() {
 
   const [location, setLocation] = useState<GeoLocation | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [locationMode, setLocationMode] =
     useState<"exact" | "approximate" | "city">("approximate");
 
@@ -262,60 +263,86 @@ function SpotsApp() {
 
   async function requestLocation(showError = true) {
     if (!navigator.geolocation) {
-      if (showError) notify.error("Geolocation is not supported by this browser.");
+      const message = "Geolocation is not supported by this browser.";
+      setLocationError(message);
+      if (showError) notify.error(message);
       return;
     }
 
     setLocationLoading(true);
+    setLocationError("");
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const base = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        };
+    try {
+      let position: GeolocationPosition;
 
-        try {
-          const params = new URLSearchParams({
-            latitude: String(base.latitude),
-            longitude: String(base.longitude),
-            localityLanguage: "en"
-          });
-          const response = await fetch(
-            "https://api.bigdatacloud.net/data/reverse-geocode-client?" + params
-          );
-          const body = await response.json();
-          const city = body.city || body.principalSubdivision || "";
-          const country = body.countryName || "";
-          const label = [city, country].filter(Boolean).join(", ") || "Current location";
+      try {
+        position = await getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0
+        });
+      } catch (error) {
+        const geoError = error as GeolocationPositionError;
 
-          setLocation({ ...base, city, country, label });
-        } catch {
-          setLocation({
-            ...base,
-            city: "",
-            country: "",
-            label: "Current location"
-          });
-        } finally {
-          setLocationLoading(false);
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          throw error;
         }
-      },
-      (error) => {
-        setLocationLoading(false);
-        if (showError) {
-          notify.error("Could not access your current location.", {
-            description: error.message
-          });
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000
+
+        position = await getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 300000
+        });
       }
-    );
+
+      const base = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      };
+
+      try {
+        const params = new URLSearchParams({
+          latitude: String(base.latitude),
+          longitude: String(base.longitude),
+          localityLanguage: "en"
+        });
+        const response = await fetch(
+          "https://api.bigdatacloud.net/data/reverse-geocode-client?" + params,
+          { signal: AbortSignal.timeout(8000) }
+        );
+
+        if (!response.ok) throw new Error("Reverse geocoding failed.");
+
+        const body = await response.json();
+        const city = body.city || body.principalSubdivision || "";
+        const country = body.countryName || "";
+        const label = [city, country].filter(Boolean).join(", ") || "Current location";
+
+        setLocation({ ...base, city, country, label });
+      } catch {
+        setLocation({
+          ...base,
+          city: "",
+          country: "",
+          label: "Current location"
+        });
+      }
+
+      setLocationError("");
+    } catch (error) {
+      setLocation(null);
+      const message = describeGeolocationError(error);
+      setLocationError(message);
+
+      if (showError) {
+        notify.error("Could not determine your current location.", {
+          description: message
+        });
+      }
+    } finally {
+      setLocationLoading(false);
+    }
   }
 
   function chooseFile(next: File | null) {
@@ -574,8 +601,8 @@ function SpotsApp() {
                       </strong>
                       <span>
                         {location
-                          ? "GPS accuracy ±" + Math.round(location.accuracy) + " m"
-                          : "Allow location access to create a spot."}
+                          ? "Accuracy ±" + Math.round(location.accuracy) + " m"
+                          : locationError || "Allow location access to create a spot."}
                       </span>
                     </div>
                   </div>
@@ -997,6 +1024,34 @@ function spotFeatureCollection(spots: Spot[]) {
       properties: { id: spot.id }
     }))
   };
+}
+
+function getCurrentPosition(
+  options: PositionOptions
+): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+function describeGeolocationError(error: unknown) {
+  const geoError = error as Partial<GeolocationPositionError>;
+
+  if (geoError.code === 1) {
+    return "Location permission is blocked. Allow location for this site and try again.";
+  }
+
+  if (geoError.code === 2) {
+    return "Your device/browser could not determine a position. Check system location services or network access.";
+  }
+
+  if (geoError.code === 3) {
+    return "Location lookup timed out. Check system location services and try Refresh.";
+  }
+
+  return error instanceof Error && error.message
+    ? error.message
+    : "Location is currently unavailable.";
 }
 
 function formatDate(value: string) {
