@@ -144,22 +144,23 @@ function SpotsApp() {
           mapRef.current = map;
           addSpotLayers(map);
           updateSpotSource(map, spotsRef.current);
+
+          map.on("click", "spot-points", (event: any) => {
+            const id = event.features?.[0]?.properties?.id;
+            if (id) {
+              setSelectedId(String(id));
+              setPanelMode("browse");
+            }
+          });
+
+          map.on("mouseenter", "spot-points", () => {
+            map.getCanvas().style.cursor = "pointer";
+          });
+          map.on("mouseleave", "spot-points", () => {
+            map.getCanvas().style.cursor = "";
+          });
+
           setMapReady(true);
-        });
-
-        map.on("click", "spot-points", (event: any) => {
-          const id = event.features?.[0]?.properties?.id;
-          if (id) {
-            setSelectedId(String(id));
-            setPanelMode("browse");
-          }
-        });
-
-        map.on("mouseenter", "spot-points", () => {
-          map.getCanvas().style.cursor = "pointer";
-        });
-        map.on("mouseleave", "spot-points", () => {
-          map.getCanvas().style.cursor = "";
         });
       } catch (error) {
         notify.error("Map could not be initialized.", {
@@ -188,6 +189,12 @@ function SpotsApp() {
   useEffect(() => {
     if (!mapReady || !location || !mapRef.current) return;
     updateCurrentLocation(mapRef.current, location);
+
+    mapRef.current.flyTo({
+      center: [location.longitude, location.latitude],
+      zoom: Math.max(mapRef.current.getZoom(), 8),
+      duration: 900
+    });
   }, [location, mapReady]);
 
   useEffect(() => {
