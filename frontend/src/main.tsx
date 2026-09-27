@@ -5,7 +5,6 @@ import {
   FileUpload,
   GlitchText,
   ScanDivider,
-  TacticalBadge,
   TacticalPanel,
   type FileUploadState
 } from "reend-components";
@@ -60,6 +59,7 @@ function App() {
 
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(false);
+  const [uploadAvailability, setUploadAvailability] = useState<"checking" | "online" | "offline">("checking");
   const widgetIdRef = useRef<string | null>(null);
 
   const totalLoaded = images.length;
@@ -76,6 +76,33 @@ function App() {
 
   useEffect(() => {
     void loadImages(false);
+
+    let active = true;
+
+    async function refreshUploadAvailability() {
+      try {
+        const response = await fetch("/api/status", { cache: "no-store" });
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok || body.success === false) {
+          throw new Error("Status unavailable");
+        }
+
+        if (active) {
+          setUploadAvailability(body.uploadAvailable ? "online" : "offline");
+        }
+      } catch {
+        if (active) setUploadAvailability("offline");
+      }
+    }
+
+    void refreshUploadAvailability();
+    const interval = window.setInterval(refreshUploadAvailability, 60_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -177,9 +204,18 @@ function App() {
       const body = await response.json().catch(() => ({}));
 
       if (!response.ok || body.success === false) {
+        if (
+          response.status === 503 &&
+          typeof body.error === "string" &&
+          body.error.toLowerCase().includes("authentication expired")
+        ) {
+          setUploadAvailability("offline");
+        }
+
         throw new Error(body.error || "Upload failed.");
       }
 
+      setUploadAvailability("online");
       setImages((current) => [body.image, ...current]);
       setUploadState("success");
       setUploadMessage("ARCHIVED // IMAGE IS NOW PUBLIC");
@@ -213,11 +249,20 @@ function App() {
           </span>
         </a>
 
-        <div className="topbar-actions">
-          <TacticalBadge variant="success">SYSTEM ONLINE</TacticalBadge>
-          <a className="admin-link" href="/admin/">
-            ADMIN
-          </a>
+        <div
+          className={"upload-status upload-status-" + uploadAvailability}
+          role="status"
+          aria-live="polite"
+          title="Upload service status"
+        >
+          <span className="upload-status-diamond" aria-hidden="true" />
+          <span>
+            {uploadAvailability === "checking"
+              ? "CHECKING"
+              : uploadAvailability === "online"
+                ? "ONLINE"
+                : "OFFLINE"}
+          </span>
         </div>
       </header>
 
