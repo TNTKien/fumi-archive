@@ -497,7 +497,16 @@ function App() {
           <strong>FUMI ARCHIVE</strong>
           <span>EXPERIMENTAL COMMUNITY IMAGE ARCHIVE</span>
         </div>
-        <span>IMAGES SERVED VIA TIKTOK / BYTEDANCE CDN</span>
+        <div className="site-footer-links">
+          <span>IMAGES SERVED VIA TIKTOK / BYTEDANCE CDN</span>
+          <a
+            href="https://github.com/TNTKien/fumi-archive"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GITHUB
+          </a>
+        </div>
       </footer>
       </div>
     </>
