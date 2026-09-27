@@ -37,7 +37,7 @@ Images are uploaded through TikTok Ads' Instant Page upload endpoint and served 
 Install dependencies:
 
 ```bash
-npm install
+bun install
 ```
 
 Create/configure the required Cloudflare resources in `wrangler.jsonc`:
@@ -49,36 +49,36 @@ Create/configure the required Cloudflare resources in `wrangler.jsonc`:
 Configure the required Worker secrets:
 
 ```bash
-npx wrangler secret put UPLOAD_SESSION
-npx wrangler secret put UPLOAD_CSRF
-npx wrangler secret put TURNSTILE_SECRET
-npx wrangler secret put RATE_LIMIT_SALT
-npx wrangler secret put PROTOMAPS_API_KEY
+bunx wrangler secret put UPLOAD_SESSION
+bunx wrangler secret put UPLOAD_CSRF
+bunx wrangler secret put TURNSTILE_SECRET
+bunx wrangler secret put RATE_LIMIT_SALT
+bunx wrangler secret put PROTOMAPS_API_KEY
 ```
 
 Optional/admin secrets:
 
 ```bash
-npx wrangler secret put DISCORD_WEBHOOK_URL
-npx wrangler secret put ACCESS_TEAM_DOMAIN
-npx wrangler secret put ACCESS_AUD
-npx wrangler secret put ADMIN_EMAIL
+bunx wrangler secret put DISCORD_WEBHOOK_URL
+bunx wrangler secret put ACCESS_TEAM_DOMAIN
+bunx wrangler secret put ACCESS_AUD
+bunx wrangler secret put ADMIN_EMAIL
 ```
 
 Apply D1 migrations:
 
 ```bash
-npm run db:migrate:remote
+bun run db:migrate:remote
 ```
 
 Build and deploy:
 
 ```bash
-npm run deploy
+bun run deploy
 ```
 
 For local development:
 
 ```bash
-npm run frontend:dev
+bun run frontend:dev
 ```
