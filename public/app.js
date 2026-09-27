@@ -11,6 +11,8 @@ const count = $("#galleryCount");
 
 let cursor = null;
 let loaded = 0;
+let turnstileWidgetId = null;
+let turnstileToken = "";
 
 input.addEventListener("change", () => {
   label.textContent = input.files?.[0]?.name || "Choose an image";
@@ -19,9 +21,19 @@ input.addEventListener("change", () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+
   const file = input.files?.[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) return show("That image is larger than 2 MB.", "error");
+
+  if (!turnstileToken) {
+    show("Please complete the verification challenge.", "error");
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    show("That image is larger than 2 MB.", "error");
+    return;
+  }
 
   button.disabled = true;
   input.disabled = true;
@@ -30,25 +42,97 @@ form.addEventListener("submit", async (event) => {
   try {
     const data = new FormData();
     data.append("file", file);
+    data.append("cf-turnstile-response", turnstileToken);
+
     const response = await fetch("/api/images", { method: "POST", body: data });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body.success === false) throw new Error(body.error || "Upload failed.");
+
+    if (!response.ok || body.success === false) {
+      throw new Error(body.error || "Upload failed.");
+    }
 
     gallery.prepend(card(body.image));
     loaded += 1;
     sync();
+
     input.value = "";
     label.textContent = "Choose an image";
     show("Archived! Your image is now public.", "success");
   } catch (error) {
     show(error.message || "Upload failed.", "error");
   } finally {
-    button.disabled = false;
     input.disabled = false;
+    resetTurnstile();
   }
 });
 
 loadMore.addEventListener("click", () => load(true));
+
+async function initTurnstile() {
+  try {
+    const response = await fetch("/api/config", { cache: "no-store" });
+    const body = await response.json();
+
+    if (!response.ok || !body.turnstileSiteKey || body.turnstileSiteKey.startsWith("REPLACE_")) {
+      throw new Error("Turnstile is not configured yet.");
+    }
+
+    await waitForTurnstile();
+
+    turnstileWidgetId = window.turnstile.render("#turnstileWidget", {
+      sitekey: body.turnstileSiteKey,
+      action: "upload",
+      theme: "auto",
+      callback(token) {
+        turnstileToken = token;
+        button.disabled = false;
+        show("");
+      },
+      "expired-callback"() {
+        turnstileToken = "";
+        button.disabled = true;
+        show("Verification expired. Please verify again.", "error");
+      },
+      "error-callback"() {
+        turnstileToken = "";
+        button.disabled = true;
+        show("Verification could not load. Please try again.", "error");
+      }
+    });
+  } catch (error) {
+    button.disabled = true;
+    show(error.message || "Turnstile could not be initialized.", "error");
+  }
+}
+
+function waitForTurnstile() {
+  if (window.turnstile) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      if (window.turnstile) {
+        clearInterval(timer);
+        resolve();
+        return;
+      }
+
+      if (Date.now() - startedAt > 10000) {
+        clearInterval(timer);
+        reject(new Error("Turnstile did not load."));
+      }
+    }, 50);
+  });
+}
+
+function resetTurnstile() {
+  turnstileToken = "";
+  button.disabled = true;
+
+  if (window.turnstile && turnstileWidgetId !== null) {
+    window.turnstile.reset(turnstileWidgetId);
+  }
+}
 
 async function load(append = false) {
   const params = new URLSearchParams({ limit: "36" });
@@ -57,7 +141,10 @@ async function load(append = false) {
   try {
     const response = await fetch("/api/images?" + params, { cache: "no-store" });
     const body = await response.json();
-    if (!response.ok || body.success === false) throw new Error(body.error || "Could not load the archive.");
+
+    if (!response.ok || body.success === false) {
+      throw new Error(body.error || "Could not load the archive.");
+    }
 
     if (!append) {
       gallery.replaceChildren();
@@ -106,14 +193,21 @@ function card(image) {
 
   const meta = document.createElement("div");
   meta.className = "image-meta";
+
   const time = document.createElement("time");
-  time.textContent = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(image.createdAt));
+  time.textContent = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(new Date(image.createdAt));
+
   const size = document.createElement("span");
   size.textContent = formatBytes(image.bytes);
-  meta.append(time, size);
 
+  meta.append(time, size);
   link.append(img);
   article.append(link, meta);
+
   return article;
 }
 
@@ -136,4 +230,5 @@ function sync() {
   loadMore.hidden = !cursor;
 }
 
+initTurnstile();
 load();

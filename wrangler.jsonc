@@ -16,7 +16,18 @@
       "migrations_dir": "migrations"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "UPLOAD_RATE_LIMITER",
+      "namespace_id": "59317",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ],
   "vars": {
-    "TIKTOK_DIRECT_CDN_HOST": "p21-ad-sg.ibyteimg.com"
+    "TIKTOK_DIRECT_CDN_HOST": "p21-ad-sg.ibyteimg.com",
+    "TURNSTILE_SITE_KEY": "REPLACE_WITH_TURNSTILE_SITE_KEY"
   }
 }

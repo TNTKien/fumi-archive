@@ -111,6 +111,11 @@ h1 {
 
 .file-picker small { margin-top: 4px; color: var(--muted); }
 
+.turnstile-wrap {
+  min-height: 65px;
+  overflow: hidden;
+}
+
 .upload-form button {
   min-height: 50px;
   border: 0;
@@ -207,6 +212,7 @@ footer { padding-bottom: 36px; color: var(--muted); font-size: 12px; }
     gap: 28px;
     padding: 28px;
   }
+
   .status { grid-column: auto; }
 }
 
@@ -215,4 +221,5 @@ footer { padding-bottom: 36px; color: var(--muted); font-size: 12px; }
   .gallery { columns: 2 140px; column-gap: 9px; }
   .image-card { margin-bottom: 9px; }
   .image-meta span { display: none; }
+  .turnstile-wrap { transform-origin: left top; }
 }
