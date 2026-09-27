@@ -287,20 +287,25 @@ function App() {
           </span>
         </a>
 
-        <div
-          className={"upload-status upload-status-" + uploadAvailability}
-          role="status"
-          aria-live="polite"
-          title="Upload service status"
-        >
-          <span className="upload-status-diamond" aria-hidden="true" />
-          <span>
-            {uploadAvailability === "checking"
-              ? "CHECKING"
-              : uploadAvailability === "online"
-                ? "ONLINE"
-                : "OFFLINE"}
-          </span>
+        <div className="topbar-actions">
+          <a className="admin-link" href="/spots/">
+            SPOTS
+          </a>
+          <div
+            className={"upload-status upload-status-" + uploadAvailability}
+            role="status"
+            aria-live="polite"
+            title="Upload service status"
+          >
+            <span className="upload-status-diamond" aria-hidden="true" />
+            <span>
+              {uploadAvailability === "checking"
+                ? "CHECKING"
+                : uploadAvailability === "online"
+                  ? "ONLINE"
+                  : "OFFLINE"}
+            </span>
+          </div>
         </div>
       </header>
 
