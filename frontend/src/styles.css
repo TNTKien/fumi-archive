@@ -162,6 +162,7 @@ main {
 
 .hero-copy h1 > span,
 .admin-hero h1 > span {
+  position: relative !important;
   display: block !important;
   width: 100%;
   max-width: 100%;
@@ -174,6 +175,19 @@ main {
   width: 100%;
   max-width: 100%;
   white-space: normal;
+}
+
+.hero-copy h1 > span > span[aria-hidden],
+.admin-hero h1 > span > span[aria-hidden] {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none;
+}
+
+.hero-copy h1 > span > span:not([aria-hidden]),
+.admin-hero h1 > span > span:not([aria-hidden]) {
+  position: relative !important;
+  z-index: 1;
 }
 
 .hero-lead {
@@ -566,6 +580,11 @@ main {
     font-size: clamp(42px, 13vw, 60px);
     line-height: .92;
     letter-spacing: -.045em;
+  }
+
+  .hero-copy h1 > span > span[aria-hidden],
+  .admin-hero h1 > span > span[aria-hidden] {
+    display: none !important;
   }
 
   .hero-lead {
