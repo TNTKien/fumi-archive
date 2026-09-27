@@ -135,7 +135,10 @@ function SpotsApp() {
           center: [18, 22],
           zoom: 1.55,
           minZoom: 1.2,
-          style: createNeutralStyle(mapKey),
+          style: createNeutralStyle(
+            mapKey,
+            document.documentElement.classList.contains("light")
+          ),
           attributionControl: false
         });
 
@@ -202,6 +205,17 @@ function SpotsApp() {
       duration: 900
     });
   }, [location, mapReady]);
+
+  useEffect(() => {
+    function handleThemeChange(event: Event) {
+      if (!mapRef.current) return;
+      const theme = (event as CustomEvent<{ theme: string }>).detail?.theme;
+      applyMapTheme(mapRef.current, theme === "light");
+    }
+
+    window.addEventListener("ef-theme-change", handleThemeChange);
+    return () => window.removeEventListener("ef-theme-change", handleThemeChange);
+  }, []);
 
   useEffect(() => {
     if (!turnstileSiteKey || !panelMode || panelMode !== "create") return;
@@ -863,8 +877,9 @@ function SpotDetail({ spot }: { spot: Spot }) {
   );
 }
 
-function createNeutralStyle(apiKey: string) {
+function createNeutralStyle(apiKey: string, isLight: boolean) {
   const source = "protomaps";
+  const palette = mapPalette(isLight);
 
   return {
     version: 8,
@@ -886,14 +901,14 @@ function createNeutralStyle(apiKey: string) {
       {
         id: "background",
         type: "background",
-        paint: { "background-color": "#0b0e10" }
+        paint: { "background-color": palette.background }
       },
       {
         id: "earth",
         type: "fill",
         source,
         "source-layer": "earth",
-        paint: { "fill-color": "#171c1e" }
+        paint: { "fill-color": palette.earth }
       },
       {
         id: "landcover",
@@ -904,11 +919,11 @@ function createNeutralStyle(apiKey: string) {
           "fill-color": [
             "match",
             ["get", "kind"],
-            "forest", "#152019",
-            "grassland", "#182119",
-            "glacier", "#273134",
-            "urban_area", "#1b1d1e",
-            "#181b1c"
+            "forest", palette.forest,
+            "grassland", palette.grassland,
+            "glacier", palette.glacier,
+            "urban_area", palette.urban,
+            palette.land
           ],
           "fill-opacity": 0.72
         }
@@ -919,7 +934,7 @@ function createNeutralStyle(apiKey: string) {
         source,
         "source-layer": "water",
         filter: ["==", ["geometry-type"], "Polygon"],
-        paint: { "fill-color": "#101b22" }
+        paint: { "fill-color": palette.water }
       },
       {
         id: "roads",
@@ -927,7 +942,7 @@ function createNeutralStyle(apiKey: string) {
         source,
         "source-layer": "roads",
         paint: {
-          "line-color": "#343a3c",
+          "line-color": palette.roads,
           "line-opacity": 0.72,
           "line-width": [
             "interpolate", ["linear"], ["zoom"],
@@ -945,8 +960,8 @@ function createNeutralStyle(apiKey: string) {
         minzoom: 13,
         filter: ["==", ["geometry-type"], "Polygon"],
         paint: {
-          "fill-color": "#252a2c",
-          "fill-outline-color": "#303638"
+          "fill-color": palette.buildings,
+          "fill-outline-color": palette.buildingOutline
         }
       },
       {
@@ -964,8 +979,8 @@ function createNeutralStyle(apiKey: string) {
           "text-letter-spacing": 0.08
         },
         paint: {
-          "text-color": "#747d80",
-          "text-halo-color": "#0b0e10",
+          "text-color": palette.countryText,
+          "text-halo-color": palette.halo,
           "text-halo-width": 1.5
         }
       },
@@ -989,13 +1004,89 @@ function createNeutralStyle(apiKey: string) {
           "text-radial-offset": 0.4
         },
         paint: {
-          "text-color": "#929a9c",
-          "text-halo-color": "#0b0e10",
+          "text-color": palette.localityText,
+          "text-halo-color": palette.halo,
           "text-halo-width": 1.5
         }
       }
     ]
   } as any;
+}
+
+function mapPalette(isLight: boolean) {
+  return isLight
+    ? {
+        background: "#e9edf0",
+        earth: "#f4f2ea",
+        forest: "#dce7d9",
+        grassland: "#e5ead8",
+        glacier: "#eef4f5",
+        urban: "#ece9df",
+        land: "#efede5",
+        water: "#d9e6ec",
+        roads: "#b6b9b5",
+        buildings: "#dedbd1",
+        buildingOutline: "#cbc7bc",
+        countryText: "#6a7072",
+        localityText: "#4f5658",
+        halo: "#f4f2ea",
+        spotStroke: "#ffffff",
+        currentStroke: "#ffffff"
+      }
+    : {
+        background: "#0b0e10",
+        earth: "#171c1e",
+        forest: "#152019",
+        grassland: "#182119",
+        glacier: "#273134",
+        urban: "#1b1d1e",
+        land: "#181b1c",
+        water: "#101b22",
+        roads: "#343a3c",
+        buildings: "#252a2c",
+        buildingOutline: "#303638",
+        countryText: "#747d80",
+        localityText: "#929a9c",
+        halo: "#0b0e10",
+        spotStroke: "#08100b",
+        currentStroke: "#0b0e10"
+      };
+}
+
+function applyMapTheme(map: any, isLight: boolean) {
+  const palette = mapPalette(isLight);
+  const paint: Array<[string, string, unknown]> = [
+    ["background", "background-color", palette.background],
+    ["earth", "fill-color", palette.earth],
+    ["water", "fill-color", palette.water],
+    ["roads", "line-color", palette.roads],
+    ["buildings", "fill-color", palette.buildings],
+    ["buildings", "fill-outline-color", palette.buildingOutline],
+    ["country-labels", "text-color", palette.countryText],
+    ["country-labels", "text-halo-color", palette.halo],
+    ["locality-labels", "text-color", palette.localityText],
+    ["locality-labels", "text-halo-color", palette.halo],
+    ["spot-points", "circle-stroke-color", palette.spotStroke],
+    ["current-location", "circle-stroke-color", palette.currentStroke]
+  ];
+
+  for (const [layer, property, value] of paint) {
+    if (map.getLayer(layer)) {
+      map.setPaintProperty(layer, property, value);
+    }
+  }
+
+  if (map.getLayer("landcover")) {
+    map.setPaintProperty("landcover", "fill-color", [
+      "match",
+      ["get", "kind"],
+      "forest", palette.forest,
+      "grassland", palette.grassland,
+      "glacier", palette.glacier,
+      "urban_area", palette.urban,
+      palette.land
+    ]);
+  }
 }
 
 function addSpotLayers(map: any) {
