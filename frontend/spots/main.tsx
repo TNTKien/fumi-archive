@@ -286,7 +286,7 @@ function SpotsApp() {
             "https://api.bigdatacloud.net/data/reverse-geocode-client?" + params
           );
           const body = await response.json();
-          const city = body.city || body.locality || "";
+          const city = body.city || body.principalSubdivision || "";
           const country = body.countryName || "";
           const label = [city, country].filter(Boolean).join(", ") || "Current location";
 
