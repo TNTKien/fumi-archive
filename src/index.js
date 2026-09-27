@@ -20,6 +20,10 @@ export default {
       });
     }
 
+    if (url.pathname === "/api/status" && request.method === "GET") {
+      return getPublicStatus(env);
+    }
+
     if (url.pathname === "/api/images" && request.method === "GET") {
       return listImages(url, env);
     }
@@ -183,6 +187,34 @@ async function updateImageStatus(request, url, env, id, auth) {
   });
 
   return json({ success: true, id, status });
+}
+
+async function getPublicStatus(env) {
+  const configured = Boolean(
+    env.UPLOAD_SESSION &&
+    env.UPLOAD_CSRF &&
+    env.TURNSTILE_SECRET &&
+    env.TURNSTILE_SITE_KEY &&
+    env.RATE_LIMIT_SALT
+  );
+
+  if (!configured) {
+    return json({ success: true, uploadAvailable: false });
+  }
+
+  try {
+    const state = await env.DB.prepare(
+      "SELECT status FROM service_state WHERE key='tiktok_session'"
+    ).first();
+
+    return json({
+      success: true,
+      uploadAvailable: state?.status !== "expired"
+    });
+  } catch (error) {
+    console.error("Could not read TikTok session state", error);
+    return json({ success: true, uploadAvailable: false });
+  }
 }
 
 async function listImages(url, env) {
