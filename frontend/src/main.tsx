@@ -262,6 +262,13 @@ function App() {
               error={uploadState === "error" ? uploadMessage : undefined}
             />
 
+            {file && (
+              <div className="selected-file">
+                <span>SELECTED // {file.name}</span>
+                <span>{formatBytes(file.size)}</span>
+              </div>
+            )}
+
             <div className="verification-row">
               <div className="verification-copy">
                 <span>HUMAN VERIFICATION</span>
