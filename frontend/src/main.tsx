@@ -47,6 +47,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
 
 function App() {
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [totalImages, setTotalImages] = useState(0);
   const [cursor, setCursor] = useState<string | null>(null);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [galleryError, setGalleryError] = useState("");
@@ -182,6 +183,7 @@ function App() {
       }
 
       setImages((current) => (append ? [...current, ...body.images] : body.images));
+      setTotalImages(Number(body.total) || 0);
       setCursor(body.nextCursor || null);
     } catch (error) {
       setGalleryError(error instanceof Error ? error.message : "Could not load archive.");
@@ -248,6 +250,7 @@ function App() {
 
       setUploadAvailability("online");
       setImages((current) => [body.image, ...current]);
+      setTotalImages((current) => current + 1);
       setUploadState("success");
       setFile(null);
       notify.success("Image archived successfully.", {
@@ -488,7 +491,11 @@ function App() {
             <>
               <div className="gallery-grid">
                 {images.map((image, index) => (
-                  <ArchiveCard image={image} index={index} key={image.id} />
+                  <ArchiveCard
+                    image={image}
+                    number={Math.max(1, totalImages - index)}
+                    key={image.id}
+                  />
                 ))}
               </div>
 
@@ -516,7 +523,7 @@ function App() {
   );
 }
 
-function ArchiveCard({ image, index }: { image: ImageItem; index: number }) {
+function ArchiveCard({ image, number }: { image: ImageItem; number: number }) {
   const [src, setSrc] = useState(image.directUrl);
   const [fallbackUsed, setFallbackUsed] = useState(false);
 
@@ -541,7 +548,7 @@ function ArchiveCard({ image, index }: { image: ImageItem; index: number }) {
         <span className="corner tr" />
         <span className="corner bl" />
         <span className="corner br" />
-        <span className="entry-index">#{String(index + 1).padStart(3, "0")}</span>
+        <span className="entry-index">#{String(number).padStart(3, "0")}</span>
       </a>
 
       <div className="archive-card-meta">
