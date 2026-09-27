@@ -491,9 +491,17 @@ function SpotsApp() {
             </span>
           </a>
 
+          <nav className="site-nav spots-primary-nav" aria-label="Primary navigation">
+            <a className="site-nav-link" href="/">
+              ARCHIVE
+            </a>
+            <a className="site-nav-link active" href="/spots/" aria-current="page">
+              SPOTS
+            </a>
+          </nav>
+
           <div className="spots-header-meta">
             <span>{total} SPOTS</span>
-            <a href="/">ARCHIVE</a>
           </div>
         </header>
 
