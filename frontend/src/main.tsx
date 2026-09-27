@@ -30,6 +30,7 @@ type TurnstileApi = {
       sitekey: string;
       action?: string;
       theme?: "light" | "dark" | "auto";
+      size?: "normal" | "flexible" | "compact";
       callback?: (token: string) => void;
       "expired-callback"?: () => void;
       "error-callback"?: () => void;
@@ -96,6 +97,7 @@ function App() {
           sitekey: config.turnstileSiteKey,
           action: "upload",
           theme: "dark",
+          size: window.matchMedia("(max-width: 360px)").matches ? "compact" : "flexible",
           callback(token) {
             setTurnstileToken(token);
             setTurnstileReady(true);
