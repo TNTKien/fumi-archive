@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "fumi-archive-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "37218076-7b55-4761-8e1d-7e666dc08bcd",
       "migrations_dir": "migrations"
     }
   ],
