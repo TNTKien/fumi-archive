@@ -352,6 +352,15 @@
   background: rgba(245,217,10,.035);
 }
 
+.privacy-option.disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.privacy-option.disabled .privacy-radio {
+  border-color: var(--archive-muted);
+}
+
 .privacy-radio {
   width: 10px;
   height: 10px;
