@@ -3,8 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   Badge,
   Button,
-  GlitchText,
-  ScanDivider
+  GlitchText
 } from "reend-components";
 import "reend-components/styles.css";
 import "./styles.css";
@@ -453,8 +452,6 @@ function App() {
             <span className="upload-panel-corner br" aria-hidden="true" />
           </section>
         </section>
-
-        <ScanDivider label="LATEST RECOVERY" />
 
         <section className="archive-section">
           <div className="archive-heading">
