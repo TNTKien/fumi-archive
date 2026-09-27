@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  Badge,
   Button,
-  FileUpload,
   GlitchText,
+  Progress,
   ScanDivider,
-  TacticalPanel,
-  type FileUploadState
+  TacticalPanel
 } from "reend-components";
 import "reend-components/styles.css";
 import "./styles.css";
@@ -53,14 +53,26 @@ function App() {
   const [galleryError, setGalleryError] = useState("");
 
   const [file, setFile] = useState<File | null>(null);
-  const [uploadState, setUploadState] = useState<FileUploadState>("idle");
+  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [uploadMessage, setUploadMessage] = useState("");
-  const [uploadKey, setUploadKey] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(false);
   const [uploadAvailability, setUploadAvailability] = useState<"checking" | "online" | "offline">("checking");
   const widgetIdRef = useRef<string | null>(null);
+
+  const filePreviewUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : ""),
+    [file]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    };
+  }, [filePreviewUrl]);
 
   const totalLoaded = images.length;
   const uploadReady = Boolean(file && turnstileToken && uploadState !== "uploading");
@@ -177,11 +189,33 @@ function App() {
     }
   }
 
-  function handleFileSelect(files: File[]) {
-    const next = files[0] || null;
+  function selectFile(next: File | null) {
+    if (!next) return;
+
+    if (next.type !== "image/jpeg" && next.type !== "image/png") {
+      setFile(null);
+      setUploadState("error");
+      setUploadMessage("Only JPEG and PNG images are supported.");
+      return;
+    }
+
+    if (next.size <= 0 || next.size > MAX_BYTES) {
+      setFile(null);
+      setUploadState("error");
+      setUploadMessage("Image must be 2 MB or smaller.");
+      return;
+    }
+
     setFile(next);
-    setUploadState(next ? "idle" : "idle");
+    setUploadState("idle");
     setUploadMessage("");
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragActive(false);
+    if (uploadState === "uploading") return;
+    selectFile(event.dataTransfer.files?.[0] || null);
   }
 
   async function handleUpload() {
@@ -222,7 +256,6 @@ function App() {
       window.setTimeout(() => {
         setUploadState("idle");
         setUploadMessage("");
-        setUploadKey((value) => value + 1);
       }, 1600);
     } catch (error) {
       setUploadState("error");
@@ -296,30 +329,103 @@ function App() {
             status={uploadState === "error" ? "warning" : uploadState === "uploading" ? "scanning" : "online"}
             className="upload-panel"
           >
-            <FileUpload
-              key={uploadKey}
+            <input
+              ref={fileInputRef}
+              type="file"
               accept="image/jpeg,image/png"
-              multiple={false}
-              maxSize={MAX_BYTES}
-              onFileSelect={handleFileSelect}
-              state={uploadState}
-              error={uploadState === "error" ? uploadMessage : undefined}
+              hidden
+              style={{ display: "none" }}
+              onChange={(event) => {
+                selectFile(event.target.files?.[0] || null);
+                event.currentTarget.value = "";
+              }}
             />
 
+            <div
+              className={"upload-dropzone" + (dragActive ? " is-dragging" : "")}
+              role="button"
+              tabIndex={0}
+              aria-label="Choose an image to upload"
+              onClick={() => uploadState !== "uploading" && fileInputRef.current?.click()}
+              onKeyDown={(event) => {
+                if ((event.key === "Enter" || event.key === " ") && uploadState !== "uploading") {
+                  event.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (uploadState !== "uploading") setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+            >
+              <span className="upload-dropzone-icon" aria-hidden="true">◇</span>
+              <div className="upload-dropzone-copy">
+                <strong>DROP IMAGE HERE</strong>
+                <span>JPEG / PNG · MAX 2 MB</span>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                tabIndex={-1}
+                disabled={uploadState === "uploading"}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                BROWSE IMAGE
+              </Button>
+            </div>
+
             {file && (
-              <div className="selected-file">
-                <span>SELECTED // {file.name}</span>
-                <span>{formatBytes(file.size)}</span>
+              <div className="upload-preview">
+                <img src={filePreviewUrl} alt="" />
+                <div className="upload-preview-copy">
+                  <div className="upload-preview-heading">
+                    <Badge variant="success">READY</Badge>
+                    <span>{formatBytes(file.size)}</span>
+                  </div>
+                  <strong title={file.name}>{file.name}</strong>
+                  <span>{file.type.replace("image/", "").toUpperCase()} IMAGE</span>
+                </div>
+                <button
+                  type="button"
+                  className="upload-remove"
+                  aria-label="Remove selected image"
+                  disabled={uploadState === "uploading"}
+                  onClick={() => {
+                    setFile(null);
+                    setUploadState("idle");
+                    setUploadMessage("");
+                  }}
+                >
+                  ×
+                </button>
               </div>
             )}
 
             <div className="verification-row">
               <div className="verification-copy">
                 <span>HUMAN VERIFICATION</span>
-                <small>{turnstileReady ? "TOKEN READY" : "AWAITING CHALLENGE"}</small>
+                <Badge variant={turnstileReady ? "success" : "default"}>
+                  {turnstileReady ? "READY" : "WAITING"}
+                </Badge>
               </div>
               <div id="turnstile-container" />
             </div>
+
+            {uploadState === "uploading" && (
+              <div className="upload-progress">
+                <div>
+                  <span>TRANSMITTING</span>
+                  <span>PLEASE WAIT</span>
+                </div>
+                <Progress size="sm" />
+              </div>
+            )}
 
             <Button
               size="lg"
@@ -331,7 +437,7 @@ function App() {
               ARCHIVE IMAGE
             </Button>
 
-            {uploadMessage && uploadState !== "error" && (
+            {uploadMessage && uploadState !== "uploading" && (
               <p className={"terminal-message " + uploadState}>{uploadMessage}</p>
             )}
           </TacticalPanel>
