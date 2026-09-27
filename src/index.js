@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { handleSpotsRequest } from "./spots.js";
 
 const UPLOAD_URL = "https://ads.tiktok.com/instant_page/api/v1/file/upload/";
 const REFERER = "https://ads.tiktok.com/instant_page/editor/main";
@@ -22,6 +23,10 @@ export default {
 
     if (url.pathname === "/api/status" && request.method === "GET") {
       return getPublicStatus(env);
+    }
+
+    if (url.pathname === "/api/spots" || url.pathname.startsWith("/api/spots/")) {
+      return handleSpotsRequest(request, url, env, ctx);
     }
 
     if (url.pathname === "/api/images" && request.method === "GET") {
