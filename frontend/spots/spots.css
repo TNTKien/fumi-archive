@@ -610,3 +610,69 @@
     padding: 12px;
   }
 }
+
+
+html.light .spots-shell,
+html.light .spots-sidebar {
+  background: var(--archive-bg);
+}
+
+html.light .spots-sidebar {
+  background:
+    linear-gradient(rgba(20,24,25,.012), rgba(20,24,25,.012)),
+    var(--archive-bg);
+}
+
+html.light .spots-tabs {
+  background: rgba(243,241,233,.96);
+}
+
+html.light .spots-map-wrap,
+html.light .map-config-missing {
+  background: #e9edf0;
+}
+
+html.light .maplibregl-ctrl-group {
+  background: rgba(251,250,245,.94) !important;
+  border: 1px solid rgba(25,29,30,.14) !important;
+}
+
+html.light .maplibregl-ctrl-group button {
+  filter: none;
+}
+
+html.light .maplibregl-ctrl-attrib {
+  color: #626a6c !important;
+  background: rgba(251,250,245,.84) !important;
+}
+
+html.light .maplibregl-ctrl-attrib a {
+  color: #4f5658 !important;
+}
+
+html.light .spot-dropzone {
+  border-color: rgba(25,29,30,.18);
+  background: rgba(25,29,30,.018);
+}
+
+html.light .spot-dropzone:hover,
+html.light .spot-dropzone.is-dragging {
+  border-color: rgba(183,155,0,.58);
+}
+
+html.light .privacy-option.active {
+  border-color: rgba(183,155,0,.46);
+  background: rgba(183,155,0,.045);
+}
+
+html.light .spot-detail {
+  background: var(--archive-panel);
+}
+
+html.light .spot-detail p {
+  color: #535b5d;
+}
+
+html.light .recent-spot {
+  color: var(--archive-text);
+}
