@@ -77,9 +77,9 @@ function App() {
   useEffect(() => {
     void loadImages(false);
 
-    let active = true;
+    let cancelled = false;
 
-    async function refreshUploadAvailability() {
+    async function loadUploadAvailability() {
       try {
         const response = await fetch("/api/status", { cache: "no-store" });
         const body = await response.json().catch(() => ({}));
@@ -88,20 +88,18 @@ function App() {
           throw new Error("Status unavailable");
         }
 
-        if (active) {
+        if (!cancelled) {
           setUploadAvailability(body.uploadAvailable ? "online" : "offline");
         }
       } catch {
-        if (active) setUploadAvailability("offline");
+        if (!cancelled) setUploadAvailability("offline");
       }
     }
 
-    void refreshUploadAvailability();
-    const interval = window.setInterval(refreshUploadAvailability, 60_000);
+    void loadUploadAvailability();
 
     return () => {
-      active = false;
-      window.clearInterval(interval);
+      cancelled = true;
     };
   }, []);
 
