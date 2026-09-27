@@ -68,7 +68,7 @@ async function listImages(url, env) {
 }
 
 async function uploadImage(request, url, env) {
-  assertSameOrigin(request, url);
+  const origin = request.headers.get("origin");\n  if (origin && origin !== url.origin) {\n    return json({ success: false, error: "Cross-origin uploads are not allowed." }, 403);\n  }
 
   if (!env.UPLOAD_SESSION || !env.UPLOAD_CSRF) {
     return json({ success: false, error: "Upload session is not configured." }, 503);
