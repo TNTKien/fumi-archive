@@ -250,14 +250,6 @@ async function consumeDailyQuota(db, actorHash) {
   return Boolean(row);
 }
 
-function assertSameOrigin(request, url) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== url.origin) {
-    const error = new Error("Cross-origin uploads are not allowed.");
-    error.status = 403;
-    throw error;
-  }
-}
 
 async function sniff(file) {
   const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
