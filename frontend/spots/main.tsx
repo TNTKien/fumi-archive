@@ -705,6 +705,7 @@ function SpotsApp() {
                 )}
 
                 <Button
+                  type="submit"
                   size="lg"
                   className="spot-submit"
                   loading={submitting}
