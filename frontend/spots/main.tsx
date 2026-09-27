@@ -152,6 +152,10 @@ function SpotsApp() {
           if (disposed) return;
           mapRef.current = map;
           addSpotLayers(map);
+          applyMapTheme(
+            map,
+            document.documentElement.classList.contains("light")
+          );
           updateSpotSource(map, spotsRef.current);
 
           map.on("click", "spot-points", (event: any) => {
@@ -233,7 +237,9 @@ function SpotsApp() {
         turnstileWidgetRef.current = window.turnstile.render(host as HTMLElement, {
           sitekey: turnstileSiteKey,
           action: "spot",
-          theme: "dark",
+          theme: document.documentElement.classList.contains("light")
+            ? "light"
+            : "dark",
           size: window.matchMedia("(max-width: 360px)").matches ? "compact" : "flexible",
           callback: setTurnstileToken,
           "expired-callback": () => setTurnstileToken(""),
