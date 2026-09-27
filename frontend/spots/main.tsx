@@ -763,9 +763,6 @@ function SpotsApp() {
                 <span>Configure PROTOMAPS_API_KEY to load the basemap.</span>
               </div>
             )}
-            <div className="map-policy">
-              NO MARITIME OR DISPUTED BOUNDARIES DISPLAYED
-            </div>
           </section>
         </div>
       </div>
