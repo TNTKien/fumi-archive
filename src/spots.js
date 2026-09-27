@@ -15,6 +15,10 @@ export async function handleSpotsRequest(request, url, env, ctx) {
     });
   }
 
+  if (url.pathname === "/api/spots/location-fallback" && request.method === "GET") {
+    return getNetworkLocation(request);
+  }
+
   if (url.pathname === "/api/spots" && request.method === "GET") {
     return listSpots(url, env);
   }
@@ -24,6 +28,37 @@ export async function handleSpotsRequest(request, url, env, ctx) {
   }
 
   return json({ success: false, error: "Spot route not found." }, 404);
+}
+
+function getNetworkLocation(request) {
+  const cf = request.cf || {};
+  const latitude = Number(cf.latitude);
+  const longitude = Number(cf.longitude);
+
+  if (
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return json(
+      { success: false, error: "Network location is unavailable." },
+      503
+    );
+  }
+
+  return json({
+    success: true,
+    location: {
+      latitude,
+      longitude,
+      city: cf.city || "",
+      region: cf.region || "",
+      countryCode: cf.country || ""
+    }
+  });
 }
 
 async function listSpots(url, env) {
@@ -94,6 +129,7 @@ async function createSpot(request, url, env, ctx) {
   const title = stringField(form, "title").trim();
   const description = stringField(form, "description").trim();
   const locationMode = stringField(form, "locationMode");
+  const locationSource = stringField(form, "locationSource");
   const city = stringField(form, "city").trim();
   const country = stringField(form, "country").trim();
   const file = form.get("file");
@@ -127,6 +163,17 @@ async function createSpot(request, url, env, ctx) {
 
   if (!["exact", "approximate", "city"].includes(locationMode)) {
     return json({ success: false, error: "Invalid location privacy mode." }, 400);
+  }
+
+  if (!["device", "network"].includes(locationSource)) {
+    return json({ success: false, error: "Invalid location source." }, 400);
+  }
+
+  if (locationMode === "exact" && locationSource !== "device") {
+    return json(
+      { success: false, error: "Exact location requires device geolocation." },
+      400
+    );
   }
 
   if (
