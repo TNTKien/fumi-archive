@@ -251,12 +251,23 @@
     letter-spacing: -.04em;
   }
 
-  .admin-hero h1 > span,
+  .admin-hero h1 > span {
+    position: relative !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+
   .admin-hero h1 > span > span {
     display: block;
     width: 100%;
     max-width: 100%;
     white-space: normal;
+  }
+
+  .admin-hero h1 > span > span[aria-hidden] {
+    display: none !important;
   }
 
   .admin-stats {
