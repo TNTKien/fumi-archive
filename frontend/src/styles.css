@@ -195,6 +195,31 @@ main {
   min-height: 240px;
 }
 
+.upload-panel [role="button"] + div {
+  display: none;
+}
+
+.selected-file {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--archive-line);
+  background: rgba(255,255,255,.025);
+  color: var(--archive-muted);
+  font: 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+}
+
+.selected-file span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--archive-text);
+}
+
 .verification-row {
   display: grid;
   gap: 12px;
