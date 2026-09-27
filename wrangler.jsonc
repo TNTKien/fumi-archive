@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fumi-archive",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-27",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fumi-archive-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "TIKTOK_DIRECT_CDN_HOST": "p21-ad-sg.ibyteimg.com"
+  }
+}
