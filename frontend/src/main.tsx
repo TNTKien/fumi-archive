@@ -8,6 +8,7 @@ import {
   notify
 } from "reend-components";
 import "reend-components/styles.css";
+import { SiteHeader } from "./site-header";
 import "./styles.css";
 
 type ImageItem = {
@@ -279,41 +280,10 @@ function App() {
     <>
       <SonnerToaster position="top-right" />
       <div className="site-shell">
-      <header className="topbar">
-        <a href="/" className="brand-lockup" aria-label="Fumi Archive home">
-          <span className="brand-symbol">ᗜˬᗜ</span>
-          <span className="brand-copy">
-            <strong>FUMI ARCHIVE</strong>
-          </span>
-        </a>
-
-        <nav className="site-nav" aria-label="Primary navigation">
-          <a className="site-nav-link active" href="/" aria-current="page">
-            ARCHIVE
-          </a>
-          <a className="site-nav-link" href="/spots/">
-            SPOTS
-          </a>
-        </nav>
-
-        <div className="topbar-actions">
-          <div
-            className={"upload-status upload-status-" + uploadAvailability}
-            role="status"
-            aria-live="polite"
-            title="Upload service status"
-          >
-            <span className="upload-status-diamond" aria-hidden="true" />
-            <span>
-              {uploadAvailability === "checking"
-                ? "CHECKING"
-                : uploadAvailability === "online"
-                  ? "ONLINE"
-                  : "OFFLINE"}
-            </span>
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        uploadAvailability={uploadAvailability}
+        current="archive"
+      />
 
       <main>
         <section className="hero-grid">
