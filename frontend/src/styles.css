@@ -18,12 +18,16 @@
 }
 
 html {
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--archive-bg);
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  max-width: 100%;
+  overflow-x: hidden;
   color: var(--archive-text);
   background:
     linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
@@ -42,7 +46,9 @@ input {
 }
 
 .site-shell {
+  width: 100%;
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 .topbar,
@@ -63,9 +69,14 @@ main,
 
 .brand-lockup {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 14px;
   text-decoration: none;
+}
+
+.brand-copy {
+  min-width: 0;
 }
 
 .brand-symbol {
@@ -99,6 +110,7 @@ main,
 
 .topbar-actions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 16px;
 }
@@ -133,13 +145,35 @@ main {
   letter-spacing: .2em;
 }
 
+.hero-copy {
+  min-width: 0;
+}
+
 .hero-copy h1 {
+  width: 100%;
   max-width: 870px;
   margin: 0;
+  overflow: hidden;
   font-family: Orbitron, ui-monospace, monospace;
   font-size: clamp(52px, 8vw, 112px);
   line-height: .88;
   letter-spacing: -.055em;
+}
+
+.hero-copy h1 > span,
+.admin-hero h1 > span {
+  display: block !important;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.hero-copy h1 > span > span,
+.admin-hero h1 > span > span {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .hero-lead {
@@ -241,6 +275,8 @@ main {
 }
 
 #turnstile-container {
+  width: 100%;
+  max-width: 100%;
   min-height: 65px;
   overflow: hidden;
 }
@@ -477,20 +513,78 @@ main {
   }
 
   .topbar {
-    min-height: 72px;
+    min-height: 68px;
+    gap: 10px;
   }
 
-  .brand-copy small,
-  .topbar-actions .admin-link {
+  .brand-lockup {
+    gap: 10px;
+  }
+
+  .brand-symbol {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    font-size: 16px;
+  }
+
+  .brand-copy strong {
+    font-size: 11px;
+    letter-spacing: .12em;
+    white-space: nowrap;
+  }
+
+  .brand-copy small {
     display: none;
   }
 
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .topbar-actions > span {
+    display: none;
+  }
+
+  .topbar-actions .admin-link {
+    display: block;
+    font-size: 9px;
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+
   main {
-    padding-top: 42px;
+    padding-top: 36px;
+  }
+
+  .section-kicker {
+    font-size: 9px;
+    letter-spacing: .14em;
   }
 
   .hero-copy h1 {
-    font-size: clamp(48px, 16vw, 72px);
+    font-size: clamp(42px, 13vw, 60px);
+    line-height: .92;
+    letter-spacing: -.045em;
+  }
+
+  .hero-lead {
+    margin-top: 22px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .hero-stats {
+    margin-top: 32px;
+  }
+
+  .upload-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .upload-panel > div:last-child > div {
+    padding: 14px;
   }
 
   .hero-stats {
