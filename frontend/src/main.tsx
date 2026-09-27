@@ -287,10 +287,16 @@ function App() {
           </span>
         </a>
 
-        <div className="topbar-actions">
-          <a className="admin-link" href="/spots/">
+        <nav className="site-nav" aria-label="Primary navigation">
+          <a className="site-nav-link active" href="/" aria-current="page">
+            ARCHIVE
+          </a>
+          <a className="site-nav-link" href="/spots/">
             SPOTS
           </a>
+        </nav>
+
+        <div className="topbar-actions">
           <div
             className={"upload-status upload-status-" + uploadAvailability}
             role="status"
