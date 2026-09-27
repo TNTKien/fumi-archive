@@ -28,6 +28,6 @@
   ],
   "vars": {
     "TIKTOK_DIRECT_CDN_HOST": "p21-ad-sg.ibyteimg.com",
-    "TURNSTILE_SITE_KEY": "REPLACE_WITH_TURNSTILE_SITE_KEY"
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFFB7498JuEzxUsu"
   }
 }
