@@ -1,4 +1,16 @@
 import React from "react";
+import { ThemeSwitcher } from "reend-components";
+
+const THEME_KEY = "fumi-theme";
+
+if (typeof window !== "undefined") {
+  const saved = localStorage.getItem(THEME_KEY);
+  const useLight =
+    saved === "light" ||
+    (!saved && window.matchMedia("(prefers-color-scheme: light)").matches);
+
+  document.documentElement.classList.toggle("light", useLight);
+}
 
 export type UploadAvailability = "checking" | "online" | "offline";
 
@@ -26,20 +38,28 @@ export function SiteHeader({
         </nav>
       </div>
 
-      <div
-        className={"upload-status upload-status-" + uploadAvailability}
-        role="status"
-        aria-live="polite"
-        title="Upload service status"
-      >
-        <span className="upload-status-diamond" aria-hidden="true" />
-        <span>
-          {uploadAvailability === "checking"
-            ? "CHECKING"
-            : uploadAvailability === "online"
-              ? "ONLINE"
-              : "OFFLINE"}
-        </span>
+      <div className="site-header-actions">
+        <ThemeSwitcher
+          storageKey={THEME_KEY}
+          className="site-theme-switcher"
+          title="Toggle light/dark mode"
+        />
+
+        <div
+          className={"upload-status upload-status-" + uploadAvailability}
+          role="status"
+          aria-live="polite"
+          title="Upload service status"
+        >
+          <span className="upload-status-diamond" aria-hidden="true" />
+          <span>
+            {uploadAvailability === "checking"
+              ? "CHECKING"
+              : uploadAvailability === "online"
+                ? "ONLINE"
+                : "OFFLINE"}
+          </span>
+        </div>
       </div>
     </header>
   );
