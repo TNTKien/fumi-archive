@@ -4,9 +4,7 @@ import {
   Badge,
   Button,
   GlitchText,
-  Progress,
-  ScanDivider,
-  TacticalPanel
+  ScanDivider
 } from "reend-components";
 import "reend-components/styles.css";
 import "./styles.css";
@@ -324,123 +322,136 @@ function App() {
             </div>
           </div>
 
-          <TacticalPanel
-            title="UPLOAD TERMINAL"
-            status={uploadState === "error" ? "warning" : uploadState === "uploading" ? "scanning" : "online"}
-            className="upload-panel"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              hidden
-              style={{ display: "none" }}
-              onChange={(event) => {
-                selectFile(event.target.files?.[0] || null);
-                event.currentTarget.value = "";
-              }}
-            />
-
-            <div
-              className={"upload-dropzone" + (dragActive ? " is-dragging" : "")}
-              role="button"
-              tabIndex={0}
-              aria-label="Choose an image to upload"
-              onClick={() => uploadState !== "uploading" && fileInputRef.current?.click()}
-              onKeyDown={(event) => {
-                if ((event.key === "Enter" || event.key === " ") && uploadState !== "uploading") {
-                  event.preventDefault();
-                  fileInputRef.current?.click();
+          <section className="upload-panel" aria-label="Upload terminal">
+            <div className="upload-panel-header">
+              <span>UPLOAD TERMINAL</span>
+              <span
+                className={
+                  "upload-panel-state upload-panel-state-" +
+                  (uploadState === "uploading"
+                    ? "scanning"
+                    : uploadState === "error"
+                      ? "warning"
+                      : "online")
                 }
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                if (uploadState !== "uploading") setDragActive(true);
-              }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-            >
-              <span className="upload-dropzone-icon" aria-hidden="true">◇</span>
-              <div className="upload-dropzone-copy">
-                <strong>DROP IMAGE HERE</strong>
-                <span>JPEG / PNG · MAX 2 MB</span>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                tabIndex={-1}
-                disabled={uploadState === "uploading"}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
               >
-                BROWSE IMAGE
-              </Button>
+                <i aria-hidden="true" />
+                {uploadState === "uploading"
+                  ? "SCANNING"
+                  : uploadState === "error"
+                    ? "CAUTION"
+                    : "ONLINE"}
+              </span>
             </div>
 
-            {file && (
-              <div className="upload-preview">
-                <img src={filePreviewUrl} alt="" />
-                <div className="upload-preview-copy">
-                  <div className="upload-preview-heading">
-                    <Badge variant="success">READY</Badge>
-                    <span>{formatBytes(file.size)}</span>
+            <div className="upload-panel-body">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                hidden
+                style={{ display: "none" }}
+                onChange={(event) => {
+                  selectFile(event.target.files?.[0] || null);
+                  event.currentTarget.value = "";
+                }}
+              />
+
+              <div
+                className={"upload-dropzone" + (dragActive ? " is-dragging" : "")}
+                role="button"
+                tabIndex={0}
+                aria-label="Choose an image to upload"
+                onClick={() => uploadState !== "uploading" && fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if ((event.key === "Enter" || event.key === " ") && uploadState !== "uploading") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  if (uploadState !== "uploading") setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={handleDrop}
+              >
+                <span className="upload-dropzone-icon" aria-hidden="true">◇</span>
+                <div className="upload-dropzone-copy">
+                  <strong>{file ? "CHOOSE ANOTHER IMAGE" : "DROP IMAGE HERE"}</strong>
+                  <span>{file ? "CLICK ANYWHERE TO REPLACE" : "CLICK ANYWHERE · JPEG / PNG · MAX 2 MB"}</span>
+                </div>
+              </div>
+
+              {file && (
+                <div className="upload-preview">
+                  <img src={filePreviewUrl} alt="" />
+                  <div className="upload-preview-copy">
+                    <div className="upload-preview-heading">
+                      <Badge variant="success">READY</Badge>
+                      <span>{formatBytes(file.size)}</span>
+                    </div>
+                    <strong title={file.name}>{file.name}</strong>
+                    <span>{file.type.replace("image/", "").toUpperCase()} IMAGE</span>
                   </div>
-                  <strong title={file.name}>{file.name}</strong>
-                  <span>{file.type.replace("image/", "").toUpperCase()} IMAGE</span>
+                  <button
+                    type="button"
+                    className="upload-remove"
+                    aria-label="Remove selected image"
+                    disabled={uploadState === "uploading"}
+                    onClick={() => {
+                      setFile(null);
+                      setUploadState("idle");
+                      setUploadMessage("");
+                    }}
+                  >
+                    ×
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="upload-remove"
-                  aria-label="Remove selected image"
-                  disabled={uploadState === "uploading"}
-                  onClick={() => {
-                    setFile(null);
-                    setUploadState("idle");
-                    setUploadMessage("");
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            )}
+              )}
 
-            <div className="verification-row">
-              <div className="verification-copy">
-                <span>HUMAN VERIFICATION</span>
-                <Badge variant={turnstileReady ? "success" : "default"}>
-                  {turnstileReady ? "READY" : "WAITING"}
-                </Badge>
+              <div className="verification-row">
+                <div className="verification-copy">
+                  <span>HUMAN VERIFICATION</span>
+                  <Badge variant={turnstileReady ? "success" : "default"}>
+                    {turnstileReady ? "READY" : "WAITING"}
+                  </Badge>
+                </div>
+                <div id="turnstile-container" />
               </div>
-              <div id="turnstile-container" />
+
+              {uploadState === "uploading" && (
+                <div className="upload-progress" role="status" aria-live="polite">
+                  <div>
+                    <span>TRANSMITTING</span>
+                    <span>UPLOAD IN PROGRESS</span>
+                  </div>
+                  <div className="upload-progress-track" aria-hidden="true">
+                    <span />
+                  </div>
+                </div>
+              )}
+
+              <Button
+                size="lg"
+                loading={uploadState === "uploading"}
+                disabled={!uploadReady}
+                onClick={handleUpload}
+                className="upload-button"
+              >
+                ARCHIVE IMAGE
+              </Button>
+
+              {uploadMessage && uploadState !== "uploading" && (
+                <p className={"terminal-message " + uploadState}>{uploadMessage}</p>
+              )}
             </div>
 
-            {uploadState === "uploading" && (
-              <div className="upload-progress">
-                <div>
-                  <span>TRANSMITTING</span>
-                  <span>PLEASE WAIT</span>
-                </div>
-                <Progress size="sm" />
-              </div>
-            )}
-
-            <Button
-              size="lg"
-              loading={uploadState === "uploading"}
-              disabled={!uploadReady}
-              onClick={handleUpload}
-              className="upload-button"
-            >
-              ARCHIVE IMAGE
-            </Button>
-
-            {uploadMessage && uploadState !== "uploading" && (
-              <p className={"terminal-message " + uploadState}>{uploadMessage}</p>
-            )}
-          </TacticalPanel>
+            <span className="upload-panel-corner tl" aria-hidden="true" />
+            <span className="upload-panel-corner tr" aria-hidden="true" />
+            <span className="upload-panel-corner bl" aria-hidden="true" />
+            <span className="upload-panel-corner br" aria-hidden="true" />
+          </section>
         </section>
 
         <ScanDivider label="LATEST RECOVERY" />
