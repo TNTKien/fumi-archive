@@ -641,15 +641,16 @@ main {
 }
 
 .gallery-grid {
-  columns: 5 230px;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
 }
 
 .archive-card {
-  display: inline-block;
+  display: block;
   width: 100%;
-  margin: 0 0 12px;
-  break-inside: avoid;
+  margin: 0;
   border: 1px solid var(--archive-line);
   background: var(--archive-panel);
   transition: border-color .16s ease, transform .16s ease;
@@ -977,12 +978,8 @@ main {
   }
 
   .gallery-grid {
-    columns: 2 140px;
-    column-gap: 8px;
-  }
-
-  .archive-card {
-    margin-bottom: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .archive-card-meta span {
