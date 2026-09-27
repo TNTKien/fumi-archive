@@ -133,7 +133,9 @@ function App() {
         widgetIdRef.current = window.turnstile.render("#turnstile-container", {
           sitekey: config.turnstileSiteKey,
           action: "upload",
-          theme: "dark",
+          theme: document.documentElement.classList.contains("light")
+            ? "light"
+            : "dark",
           size: window.matchMedia("(max-width: 360px)").matches ? "compact" : "flexible",
           callback(token) {
             setTurnstileToken(token);
