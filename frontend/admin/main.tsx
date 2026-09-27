@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  Alert,
   Button,
   GlitchText,
   ScanDivider,
+  SonnerToaster,
   Tabs,
   TabsList,
   TabsTrigger,
   TacticalBadge,
-  TacticalPanel
+  notify
 } from "reend-components";
 import "reend-components/styles.css";
 import "../src/styles.css";
@@ -36,10 +36,6 @@ function AdminApp() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notificationBusy, setNotificationBusy] = useState(false);
-  const [message, setMessage] = useState<{
-    text: string;
-    tone: "info" | "success" | "error";
-  } | null>(null);
 
   const counts = useMemo(() => {
     const published = images.filter((image) => image.status === "published").length;
@@ -58,7 +54,6 @@ function AdminApp() {
 
   async function loadImages() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const params = new URLSearchParams({ limit: "100", status: "all" });
@@ -74,10 +69,10 @@ function AdminApp() {
       setImages(body.images || []);
       setAdminEmail(body.admin || "Authenticated admin");
     } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Could not load moderation data.",
-        tone: "error"
-      });
+      notify.error(
+        error instanceof Error ? error.message : "Could not load moderation data.",
+        { duration: 5000 }
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +81,6 @@ function AdminApp() {
   async function changeStatus(image: AdminImage) {
     const nextStatus = image.status === "published" ? "hidden" : "published";
     setBusyId(image.id);
-    setMessage(null);
 
     try {
       const response = await fetch(
@@ -109,18 +103,22 @@ function AdminApp() {
         )
       );
 
-      setMessage({
-        text:
-          nextStatus === "hidden"
-            ? "Image hidden from the public archive."
-            : "Image restored to the public archive.",
-        tone: "success"
-      });
+      notify.success(
+        nextStatus === "hidden"
+          ? "Image hidden from the public archive."
+          : "Image restored to the public archive.",
+        {
+          description:
+            nextStatus === "hidden"
+              ? "It will no longer appear in the public gallery."
+              : "It is visible in the public gallery again."
+        }
+      );
     } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Moderation action failed.",
-        tone: "error"
-      });
+      notify.error(
+        error instanceof Error ? error.message : "Moderation action failed.",
+        { duration: 5000 }
+      );
     } finally {
       setBusyId(null);
     }
@@ -128,7 +126,6 @@ function AdminApp() {
 
   async function testNotification() {
     setNotificationBusy(true);
-    setMessage(null);
 
     try {
       const response = await fetch("/api/admin/discord/test", { method: "POST" });
@@ -138,22 +135,21 @@ function AdminApp() {
         throw new Error(body.error || "Notification test failed.");
       }
 
-      setMessage({
-        text: "Discord test notification sent.",
-        tone: "success"
-      });
+      notify.success("Discord test notification sent.");
     } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Notification test failed.",
-        tone: "error"
-      });
+      notify.error(
+        error instanceof Error ? error.message : "Notification test failed.",
+        { duration: 5000 }
+      );
     } finally {
       setNotificationBusy(false);
     }
   }
 
   return (
-    <div className="site-shell admin-shell">
+    <>
+      <SonnerToaster position="top-right" />
+      <div className="site-shell admin-shell">
       <header className="topbar">
         <a href="/" className="brand-lockup" aria-label="Fumi Archive home">
           <span className="brand-symbol">ᗜˬᗜ</span>
@@ -184,7 +180,15 @@ function AdminApp() {
             </p>
           </div>
 
-          <TacticalPanel title="SESSION" status="online" className="session-panel">
+          <section className="session-panel" aria-label="Admin session">
+            <div className="session-panel-header">
+              <span>SESSION</span>
+              <span className="session-panel-state">
+                <i aria-hidden="true" />
+                ONLINE
+              </span>
+            </div>
+
             <dl className="session-list">
               <div>
                 <dt>IDENTITY</dt>
@@ -199,7 +203,12 @@ function AdminApp() {
                 <dd>AUTHORIZED</dd>
               </div>
             </dl>
-          </TacticalPanel>
+
+            <span className="session-panel-corner tl" aria-hidden="true" />
+            <span className="session-panel-corner tr" aria-hidden="true" />
+            <span className="session-panel-corner bl" aria-hidden="true" />
+            <span className="session-panel-corner br" aria-hidden="true" />
+          </section>
         </section>
 
         <section className="admin-stats" aria-label="Moderation statistics">
@@ -240,17 +249,6 @@ function AdminApp() {
           </div>
         </section>
 
-        {message && (
-          <Alert
-            variant={message.tone === "error" ? "error" : message.tone === "success" ? "success" : "info"}
-            dismissible
-            onDismiss={() => setMessage(null)}
-            className="admin-alert"
-          >
-            {message.text}
-          </Alert>
-        )}
-
         {loading ? (
           <div className="admin-grid" aria-label="Loading moderation data">
             {Array.from({ length: 8 }).map((_, index) => (
@@ -284,7 +282,8 @@ function AdminApp() {
         </div>
         <span>{counts.all} ENTRIES LOADED</span>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 
