@@ -12,6 +12,7 @@ export default defineConfig({
   build: {
     outDir: "../dist",
     emptyOutDir: true,
+    chunkSizeWarningLimit: 750,
     rollupOptions: {
       input: {
         main: resolve(rootDir, "frontend/index.html"),
