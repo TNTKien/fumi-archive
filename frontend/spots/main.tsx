@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Badge, Button, SonnerToaster, notify } from "reend-components";
 import "reend-components/styles.css";
+import { SiteHeader } from "../src/site-header";
 import "../src/styles.css";
 import "./spots.css";
 
@@ -68,6 +69,8 @@ function SpotsApp() {
   const [mapKey, setMapKey] = useState("");
   const [turnstileSiteKey, setTurnstileSiteKey] = useState("");
   const [mapReady, setMapReady] = useState(false);
+  const [uploadAvailability, setUploadAvailability] =
+    useState<"checking" | "online" | "offline">("checking");
 
   const [location, setLocation] = useState<GeoLocation | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -113,6 +116,7 @@ function SpotsApp() {
   useEffect(() => {
     void loadInitialData();
     void requestLocation(false);
+    void loadUploadAvailability();
   }, []);
 
   useEffect(() => {
@@ -234,6 +238,21 @@ function SpotsApp() {
       cancelled = true;
     };
   }, [turnstileSiteKey, panelMode]);
+
+  async function loadUploadAvailability() {
+    try {
+      const response = await fetch("/api/status", { cache: "no-store" });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok || body.success === false) {
+        throw new Error("Status unavailable");
+      }
+
+      setUploadAvailability(body.uploadAvailable ? "online" : "offline");
+    } catch {
+      setUploadAvailability("offline");
+    }
+  }
 
   async function loadInitialData() {
     try {
@@ -482,28 +501,10 @@ function SpotsApp() {
     <>
       <SonnerToaster position="top-right" />
       <div className="spots-shell">
-        <header className="spots-header">
-          <a href="/" className="brand-lockup">
-            <span className="brand-symbol">ᗜˬᗜ</span>
-            <span className="brand-copy">
-              <strong>FUMI SPOTS</strong>
-              <small>FUMI ARCHIVE // WORLD NODE</small>
-            </span>
-          </a>
-
-          <nav className="site-nav spots-primary-nav" aria-label="Primary navigation">
-            <a className="site-nav-link" href="/">
-              ARCHIVE
-            </a>
-            <a className="site-nav-link active" href="/spots/" aria-current="page">
-              SPOTS
-            </a>
-          </nav>
-
-          <div className="spots-header-meta">
-            <span>{total} SPOTS</span>
-          </div>
-        </header>
+        <SiteHeader
+          uploadAvailability={uploadAvailability}
+          current="spots"
+        />
 
         <div className="spots-layout">
           <aside className="spots-sidebar">
