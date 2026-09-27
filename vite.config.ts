@@ -15,7 +15,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(rootDir, "frontend/index.html"),
-        admin: resolve(rootDir, "frontend/admin/index.html")
+        admin: resolve(rootDir, "frontend/admin/index.html"),
+        spots: resolve(rootDir, "frontend/spots/index.html")
       }
     }
   }
