@@ -229,10 +229,16 @@ async function listImages(url, env) {
         "SELECT id,direct_url,src_url,mime_type,bytes,width,height,created_at FROM images WHERE status='published' ORDER BY created_at DESC LIMIT ?"
       ).bind(limit);
 
-  const { results = [] } = await statement.all();
+  const [{ results = [] }, countRow] = await Promise.all([
+    statement.all(),
+    env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM images WHERE status='published'"
+    ).first()
+  ]);
 
   return json({
     success: true,
+    total: Number(countRow?.total) || 0,
     images: results.map((row) => ({
       id: row.id,
       directUrl: row.direct_url,
