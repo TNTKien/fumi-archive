@@ -25,6 +25,10 @@ export default {
       return getPublicStatus(env);
     }
 
+    if (url.pathname === "/spots") {
+      return Response.redirect(url.origin + "/spots/", 302);
+    }
+
     if (url.pathname === "/api/spots" || url.pathname.startsWith("/api/spots/")) {
       return handleSpotsRequest(request, url, env, ctx);
     }
