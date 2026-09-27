@@ -664,6 +664,7 @@ main {
 .archive-image-link {
   position: relative;
   display: block;
+  aspect-ratio: 5 / 7;
   overflow: hidden;
   background: #101213;
 }
@@ -671,8 +672,8 @@ main {
 .archive-image-link img {
   display: block;
   width: 100%;
-  height: auto;
-  min-height: 140px;
+  height: 100%;
+  min-height: 0;
   object-fit: cover;
 }
 
