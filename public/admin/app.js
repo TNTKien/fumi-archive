@@ -4,9 +4,30 @@ const statusMessage = document.querySelector("#statusMessage");
 const summary = document.querySelector("#summary");
 const adminIdentity = document.querySelector("#adminIdentity");
 const filterButtons = [...document.querySelectorAll("[data-filter]")];
+const testNotificationButton = document.querySelector("#testNotificationButton");
 
 let currentFilter = "all";
 let images = [];
+
+testNotificationButton?.addEventListener("click", async () => {
+  testNotificationButton.disabled = true;
+  showStatus("Sending test notification…");
+
+  try {
+    const response = await fetch("/api/admin/discord/test", { method: "POST" });
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok || body.success === false) {
+      throw new Error(body.error || "Notification test failed.");
+    }
+
+    showStatus("Test notification sent.");
+  } catch (error) {
+    showStatus(error.message || "Notification test failed.", "error");
+  } finally {
+    testNotificationButton.disabled = false;
+  }
+});
 
 filterButtons.forEach((button) => {
   button.addEventListener("click", async () => {
