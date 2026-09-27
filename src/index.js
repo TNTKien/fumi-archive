@@ -1,3 +1,5 @@
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
 const UPLOAD_URL = "https://ads.tiktok.com/instant_page/api/v1/file/upload/";
 const REFERER = "https://ads.tiktok.com/instant_page/editor/main";
 const ORIGIN = "https://ads.tiktok.com";
@@ -14,10 +16,7 @@ export default {
       return json({
         success: true,
         turnstileSiteKey: env.TURNSTILE_SITE_KEY || "",
-        limits: {
-          perMinute: 5,
-          perDay: DAILY_LIMIT
-        }
+        limits: { perMinute: 5, perDay: DAILY_LIMIT }
       });
     }
 
@@ -29,6 +28,33 @@ export default {
       return uploadImage(request, url, env);
     }
 
+    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
+      const auth = await requireAdmin(request, env);
+      if (auth instanceof Response) return auth;
+
+      if (url.pathname === "/admin") {
+        return Response.redirect(url.origin + "/admin/", 302);
+      }
+
+      return env.ASSETS.fetch(request);
+    }
+
+    if (url.pathname.startsWith("/api/admin/")) {
+      const auth = await requireAdmin(request, env);
+      if (auth instanceof Response) return auth;
+
+      if (url.pathname === "/api/admin/images" && request.method === "GET") {
+        return listAdminImages(url, env, auth);
+      }
+
+      const match = url.pathname.match(/^\/api\/admin\/images\/([^/]+)\/status$/);
+      if (match && request.method === "PATCH") {
+        return updateImageStatus(request, url, env, decodeURIComponent(match[1]), auth);
+      }
+
+      return json({ success: false, error: "Admin route not found." }, 404);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ success: false, error: "Not found" }, 404);
     }
@@ -36,6 +62,105 @@ export default {
     return env.ASSETS.fetch(request);
   }
 };
+
+async function requireAdmin(request, env) {
+  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD || !env.ADMIN_EMAIL) {
+    return json({ success: false, error: "Admin access is not configured." }, 503);
+  }
+
+  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (!token) {
+    return json({ success: false, error: "Cloudflare Access authentication required." }, 401);
+  }
+
+  try {
+    const issuer = normalizeAccessIssuer(env.ACCESS_TEAM_DOMAIN);
+    const jwks = createRemoteJWKSet(new URL(issuer + "/cdn-cgi/access/certs"));
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer,
+      audience: env.ACCESS_AUD
+    });
+
+    const email = typeof payload.email === "string" ? payload.email.toLowerCase() : "";
+    const expectedEmail = env.ADMIN_EMAIL.trim().toLowerCase();
+
+    if (!email || email !== expectedEmail) {
+      return json({ success: false, error: "Admin access denied." }, 403);
+    }
+
+    return { email };
+  } catch (error) {
+    console.error("Access JWT verification failed", error);
+    return json({ success: false, error: "Invalid Cloudflare Access session." }, 401);
+  }
+}
+
+function normalizeAccessIssuer(value) {
+  const raw = String(value || "").trim().replace(/\/$/, "");
+  if (raw.startsWith("https://")) return raw;
+  return "https://" + raw;
+}
+
+async function listAdminImages(url, env, auth) {
+  const requestedLimit = Number(url.searchParams.get("limit")) || 60;
+  const limit = Math.max(1, Math.min(100, requestedLimit));
+  const status = url.searchParams.get("status") || "all";
+
+  let statement;
+
+  if (status === "published" || status === "hidden") {
+    statement = env.DB.prepare(
+      "SELECT id,direct_url,src_url,mime_type,bytes,width,height,created_at,status FROM images WHERE status = ? ORDER BY created_at DESC LIMIT ?"
+    ).bind(status, limit);
+  } else {
+    statement = env.DB.prepare(
+      "SELECT id,direct_url,src_url,mime_type,bytes,width,height,created_at,status FROM images ORDER BY created_at DESC LIMIT ?"
+    ).bind(limit);
+  }
+
+  const { results = [] } = await statement.all();
+
+  return json({
+    success: true,
+    admin: auth.email,
+    images: results.map(toAdminImage)
+  });
+}
+
+async function updateImageStatus(request, url, env, id, auth) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== url.origin) {
+    return json({ success: false, error: "Cross-origin admin actions are not allowed." }, 403);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: "Invalid JSON body." }, 400);
+  }
+
+  const status = body?.status;
+  if (status !== "published" && status !== "hidden") {
+    return json({ success: false, error: "Status must be published or hidden." }, 400);
+  }
+
+  const result = await env.DB.prepare(
+    "UPDATE images SET status = ? WHERE id = ?"
+  ).bind(status, id).run();
+
+  if (!result.meta?.changes) {
+    return json({ success: false, error: "Image not found." }, 404);
+  }
+
+  console.log("Admin image status changed", {
+    admin: auth.email,
+    imageId: id,
+    status
+  });
+
+  return json({ success: true, id, status });
+}
 
 async function listImages(url, env) {
   const limit = Math.max(1, Math.min(60, Number(url.searchParams.get("limit")) || 36));
@@ -167,10 +292,7 @@ async function uploadImage(request, url, env) {
     typeof payload.data?.src !== "string"
   ) {
     return json(
-      {
-        success: false,
-        error: payload?.message || "TikTok rejected the upload."
-      },
+      { success: false, error: payload?.message || "TikTok rejected the upload." },
       upstream.status >= 400 ? upstream.status : 502
     );
   }
@@ -196,32 +318,24 @@ async function uploadImage(request, url, env) {
     createdAt
   ).run();
 
-  return json(
-    {
-      success: true,
-      image: {
-        id,
-        directUrl,
-        srcUrl,
-        mimeType: kind.type,
-        bytes: Number(payload.data.size) || file.size,
-        width: Number(payload.data.width) || null,
-        height: Number(payload.data.height) || null,
-        createdAt
-      }
-    },
-    201
-  );
+  return json({
+    success: true,
+    image: {
+      id,
+      directUrl,
+      srcUrl,
+      mimeType: kind.type,
+      bytes: Number(payload.data.size) || file.size,
+      width: Number(payload.data.width) || null,
+      height: Number(payload.data.height) || null,
+      createdAt
+    }
+  }, 201);
 }
 
 async function verifyTurnstile(token, ip, secret) {
   try {
-    const body = new URLSearchParams({
-      secret,
-      response: token,
-      remoteip: ip
-    });
-
+    const body = new URLSearchParams({ secret, response: token, remoteip: ip });
     const response = await fetch(TURNSTILE_VERIFY_URL, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -239,7 +353,9 @@ async function verifyTurnstile(token, ip, secret) {
 async function hashActor(ip, salt) {
   const bytes = new TextEncoder().encode(salt + ":" + ip);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function consumeDailyQuota(db, actorHash) {
@@ -255,15 +371,6 @@ async function consumeDailyQuota(db, actorHash) {
   ).bind(now, day, actorHash, DAILY_LIMIT).first();
 
   return Boolean(row);
-}
-
-function assertSameOrigin(request, url) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== url.origin) {
-    const error = new Error("Cross-origin uploads are not allowed.");
-    error.status = 403;
-    throw error;
-  }
 }
 
 async function sniff(file) {
@@ -287,6 +394,20 @@ function extractUri(src) {
   const uri = pathname.split("~")[0];
   if (!uri || !uri.includes("/")) throw new Error("Unable to parse TikTok image URI.");
   return uri;
+}
+
+function toAdminImage(row) {
+  return {
+    id: row.id,
+    directUrl: row.direct_url,
+    srcUrl: row.src_url,
+    mimeType: row.mime_type,
+    bytes: row.bytes,
+    width: row.width,
+    height: row.height,
+    createdAt: row.created_at,
+    status: row.status
+  };
 }
 
 function json(body, status = 200, extraHeaders = {}) {
