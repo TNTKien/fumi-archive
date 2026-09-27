@@ -27,10 +27,11 @@ type Spot = {
 type GeoLocation = {
   latitude: number;
   longitude: number;
-  accuracy: number;
+  accuracy: number | null;
   city: string;
   country: string;
   label: string;
+  source: "device" | "network";
 };
 
 type TurnstileApi = {
@@ -319,18 +320,47 @@ function SpotsApp() {
         const country = body.countryName || "";
         const label = [city, country].filter(Boolean).join(", ") || "Current location";
 
-        setLocation({ ...base, city, country, label });
+        setLocation({ ...base, city, country, label, source: "device" });
       } catch {
         setLocation({
           ...base,
           city: "",
           country: "",
-          label: "Current location"
+          label: "Current location",
+          source: "device"
         });
       }
 
       setLocationError("");
     } catch (error) {
+      const geoError = error as Partial<GeolocationPositionError>;
+
+      if (geoError.code !== 1) {
+        try {
+          const fallback = await loadNetworkLocation();
+
+          if (fallback) {
+            setLocation(fallback);
+            setLocationError("Using approximate network location because device location is unavailable.");
+
+            if (locationMode === "exact") {
+              setLocationMode("approximate");
+            }
+
+            if (showError) {
+              notify.info("Using approximate network location.", {
+                description:
+                  "Desktop device location timed out, so Fumi Spots is using Cloudflare network geolocation."
+              });
+            }
+
+            return;
+          }
+        } catch {
+          // Fall through to the original geolocation error.
+        }
+      }
+
       setLocation(null);
       const message = describeGeolocationError(error);
       setLocationError(message);
@@ -366,6 +396,13 @@ function SpotsApp() {
       return;
     }
 
+    if (locationMode === "exact" && location.source !== "device") {
+      notify.error("Exact location requires device geolocation.", {
+        description: "Use Approximate/City only, or enable desktop location services."
+      });
+      return;
+    }
+
     if (locationMode === "city" && !location.city) {
       notify.error("City could not be detected. Retry location or choose another privacy mode.");
       return;
@@ -384,6 +421,7 @@ function SpotsApp() {
       form.append("title", title.trim());
       form.append("description", description.trim());
       form.append("locationMode", locationMode);
+      form.append("locationSource", location.source);
       form.append("latitude", String(location.latitude));
       form.append("longitude", String(location.longitude));
       form.append("city", location.city);
@@ -601,7 +639,9 @@ function SpotsApp() {
                       </strong>
                       <span>
                         {location
-                          ? "Accuracy ±" + Math.round(location.accuracy) + " m"
+                          ? location.source === "device"
+                            ? "Device location · accuracy ±" + Math.round(location.accuracy || 0) + " m"
+                            : "Approximate network location"
                           : locationError || "Allow location access to create a spot."}
                       </span>
                     </div>
@@ -620,7 +660,12 @@ function SpotsApp() {
                       current={locationMode}
                       onChange={setLocationMode}
                       title="EXACT"
-                      description="Publish the GPS position."
+                      description={
+                        location?.source === "network"
+                          ? "Requires device geolocation."
+                          : "Publish the GPS position."
+                      }
+                      disabled={location?.source === "network"}
                     />
                     <PrivacyOption
                       value="approximate"
@@ -754,21 +799,30 @@ function PrivacyOption({
   current,
   onChange,
   title,
-  description
+  description,
+  disabled = false
 }: {
   value: "exact" | "approximate" | "city";
   current: "exact" | "approximate" | "city";
   onChange: (value: "exact" | "approximate" | "city") => void;
   title: string;
   description: string;
+  disabled?: boolean;
 }) {
   return (
-    <label className={"privacy-option" + (current === value ? " active" : "")}>
+    <label
+      className={
+        "privacy-option" +
+        (current === value ? " active" : "") +
+        (disabled ? " disabled" : "")
+      }
+    >
       <input
         type="radio"
         name="location-mode"
         value={value}
         checked={current === value}
+        disabled={disabled}
         onChange={() => onChange(value)}
       />
       <span className="privacy-radio" />
@@ -1023,6 +1077,41 @@ function spotFeatureCollection(spots: Spot[]) {
       },
       properties: { id: spot.id }
     }))
+  };
+}
+
+async function loadNetworkLocation(): Promise<GeoLocation | null> {
+  const response = await fetch("/api/spots/location-fallback", {
+    cache: "no-store"
+  });
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok || body.success === false || !body.location) {
+    return null;
+  }
+
+  const countryCode = String(body.location.countryCode || "");
+  let country = countryCode;
+
+  try {
+    country =
+      new Intl.DisplayNames(["en"], { type: "region" }).of(countryCode) ||
+      countryCode;
+  } catch {
+    // Keep the country code if Intl.DisplayNames is unavailable.
+  }
+
+  const city = String(body.location.city || body.location.region || "");
+  const label = [city, country].filter(Boolean).join(", ") || "Approximate location";
+
+  return {
+    latitude: Number(body.location.latitude),
+    longitude: Number(body.location.longitude),
+    accuracy: null,
+    city,
+    country,
+    label,
+    source: "network"
   };
 }
 
