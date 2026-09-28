@@ -17,6 +17,7 @@ export default defineConfig({
       input: {
         main: resolve(rootDir, "frontend/index.html"),
         admin: resolve(rootDir, "frontend/admin/index.html"),
+        adminSpots: resolve(rootDir, "frontend/admin/spots/index.html"),
         spots: resolve(rootDir, "frontend/spots/index.html")
       }
     }
