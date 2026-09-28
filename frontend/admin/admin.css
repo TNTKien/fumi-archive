@@ -380,3 +380,78 @@
     padding-inline: 8px;
   }
 }
+
+
+.admin-link-active {
+  color: var(--archive-accent);
+}
+
+.admin-spot-card-body {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-spot-title {
+  overflow: hidden;
+  color: var(--archive-text);
+  font: 700 12px/1.35 Orbitron, ui-monospace, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-spot-by {
+  overflow: hidden;
+  color: var(--archive-muted);
+  font: 8px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .09em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-spot-location {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+  color: var(--archive-muted);
+  font: 8px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+}
+
+.admin-spot-location span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-spot-location span:last-child {
+  flex: 0 0 auto;
+  color: var(--archive-green);
+}
+
+@media (max-width: 620px) {
+  .admin-shell .topbar-actions {
+    gap: 6px;
+  }
+
+  .admin-shell .topbar-actions .admin-link {
+    font-size: 8px;
+    letter-spacing: .04em;
+  }
+
+  .admin-spot-title {
+    font-size: 10px;
+  }
+
+  .admin-spot-location {
+    display: block;
+  }
+
+  .admin-spot-location span {
+    display: block;
+  }
+
+  .admin-spot-location span:last-child {
+    margin-top: 4px;
+  }
+}
