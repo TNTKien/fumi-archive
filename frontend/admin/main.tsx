@@ -161,6 +161,12 @@ function AdminApp() {
 
         <div className="topbar-actions">
           <TacticalBadge variant="warning">ADMIN MODE</TacticalBadge>
+          <a className="admin-link admin-link-active" href="/admin/" aria-current="page">
+            IMAGES
+          </a>
+          <a className="admin-link" href="/admin/spots/">
+            SPOTS
+          </a>
           <a className="admin-link" href="/">
             PUBLIC ARCHIVE
           </a>
