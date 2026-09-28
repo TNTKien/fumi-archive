@@ -60,13 +60,22 @@ export default {
         return listAdminImages(url, env, auth);
       }
 
+      if (url.pathname === "/api/admin/spots" && request.method === "GET") {
+        return listAdminSpots(url, env, auth);
+      }
+
       if (url.pathname === "/api/admin/discord/test" && request.method === "POST") {
         return sendDiscordTest(url, env, auth);
       }
 
-      const match = url.pathname.match(/^\/api\/admin\/images\/([^/]+)\/status$/);
-      if (match && request.method === "PATCH") {
-        return updateImageStatus(request, url, env, decodeURIComponent(match[1]), auth);
+      const imageMatch = url.pathname.match(/^\/api\/admin\/images\/([^/]+)\/status$/);
+      if (imageMatch && request.method === "PATCH") {
+        return updateImageStatus(request, url, env, decodeURIComponent(imageMatch[1]), auth);
+      }
+
+      const spotMatch = url.pathname.match(/^\/api\/admin\/spots\/([^/]+)\/status$/);
+      if (spotMatch && request.method === "PATCH") {
+        return updateSpotStatus(request, url, env, decodeURIComponent(spotMatch[1]), auth);
       }
 
       return json({ success: false, error: "Admin route not found." }, 404);
@@ -161,6 +170,67 @@ async function listAdminImages(url, env, auth) {
     admin: auth.email,
     images: results.map(toAdminImage)
   });
+}
+
+async function listAdminSpots(url, env, auth) {
+  const requestedLimit = Number(url.searchParams.get("limit")) || 100;
+  const limit = Math.max(1, Math.min(200, requestedLimit));
+  const status = url.searchParams.get("status") || "all";
+
+  let statement;
+
+  if (status === "published" || status === "hidden") {
+    statement = env.DB.prepare(
+      "SELECT id,display_name,title,description,direct_url,src_url,mime_type,bytes,width,height,latitude,longitude,location_mode,location_name,city,country,created_at,status FROM spots WHERE status = ? ORDER BY created_at DESC LIMIT ?"
+    ).bind(status, limit);
+  } else {
+    statement = env.DB.prepare(
+      "SELECT id,display_name,title,description,direct_url,src_url,mime_type,bytes,width,height,latitude,longitude,location_mode,location_name,city,country,created_at,status FROM spots ORDER BY created_at DESC LIMIT ?"
+    ).bind(limit);
+  }
+
+  const { results = [] } = await statement.all();
+
+  return json({
+    success: true,
+    admin: auth.email,
+    spots: results.map(toAdminSpot)
+  });
+}
+
+async function updateSpotStatus(request, url, env, id, auth) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== url.origin) {
+    return json({ success: false, error: "Cross-origin admin actions are not allowed." }, 403);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ success: false, error: "Invalid JSON body." }, 400);
+  }
+
+  const status = body?.status;
+  if (status !== "published" && status !== "hidden") {
+    return json({ success: false, error: "Status must be published or hidden." }, 400);
+  }
+
+  const result = await env.DB.prepare(
+    "UPDATE spots SET status = ? WHERE id = ?"
+  ).bind(status, id).run();
+
+  if (!result.meta?.changes) {
+    return json({ success: false, error: "Spot not found." }, 404);
+  }
+
+  console.log("Admin spot status changed", {
+    admin: auth.email,
+    spotId: id,
+    status
+  });
+
+  return json({ success: true, id, status });
 }
 
 async function updateImageStatus(request, url, env, id, auth) {
@@ -623,6 +693,29 @@ function toAdminImage(row) {
     bytes: row.bytes,
     width: row.width,
     height: row.height,
+    createdAt: row.created_at,
+    status: row.status
+  };
+}
+
+function toAdminSpot(row) {
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    title: row.title,
+    description: row.description,
+    directUrl: row.direct_url,
+    srcUrl: row.src_url,
+    mimeType: row.mime_type,
+    bytes: row.bytes,
+    width: row.width,
+    height: row.height,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    locationMode: row.location_mode,
+    locationName: row.location_name,
+    city: row.city,
+    country: row.country,
     createdAt: row.created_at,
     status: row.status
   };
