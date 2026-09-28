@@ -49,6 +49,10 @@ export default {
         return Response.redirect(url.origin + "/admin/", 302);
       }
 
+      if (url.pathname === "/admin/spots") {
+        return Response.redirect(url.origin + "/admin/spots/", 302);
+      }
+
       return env.ASSETS.fetch(request);
     }
 
